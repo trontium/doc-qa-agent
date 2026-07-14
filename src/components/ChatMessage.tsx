@@ -10,6 +10,19 @@ import type { Message } from '@/types/message';
 const REMARK_PLUGINS = [remarkGfm];
 const REHYPE_PLUGINS = [rehypeHighlight];
 
+function toolLabel(name: string): string {
+  switch (name) {
+    case 'retrieve_docs':
+      return '📚 检索知识库';
+    case 'web_search':
+      return '🌐 搜索互联网';
+    case 'calculator':
+      return '🧮 计算器';
+    default:
+      return `🔧 ${name}`;
+  }
+}
+
 function ChatMessageComp({ message }: { message: Message }) {
   const isUser = message.role === 'user';
   const isStreaming = message.status === 'streaming';
@@ -35,6 +48,29 @@ function ChatMessageComp({ message }: { message: Message }) {
             <span className="ml-2 inline-block w-1.5 h-1.5 rounded-full bg-current animate-pulse" />
           )}
         </div>
+
+        {/* 工具调用状态徽章 */}
+        {!isUser && message.toolCalls && message.toolCalls.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 mb-2">
+            {message.toolCalls.map((t, i) => (
+              <span
+                key={`${t.name}-${i}`}
+                className={`inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full border ${
+                  t.status === 'running'
+                    ? 'bg-yellow-50 border-yellow-300 text-yellow-800'
+                    : 'bg-green-50 border-green-300 text-green-800'
+                }`}
+              >
+                {t.status === 'running' ? (
+                  <span className="w-1.5 h-1.5 rounded-full bg-yellow-500 animate-pulse" />
+                ) : (
+                  <span className="text-green-600">✓</span>
+                )}
+                {toolLabel(t.name)}
+              </span>
+            ))}
+          </div>
+        )}
 
         {isUser ? (
           <div className="whitespace-pre-wrap break-words">{message.content}</div>
@@ -85,11 +121,12 @@ function ChatMessageComp({ message }: { message: Message }) {
   );
 }
 
-// React.memo：只在 status/content/citations 变化时重渲，避免流式期间其他消息也 diff
+// React.memo：只在 status/content/citations/toolCalls 变化时重渲
 export const ChatMessage = memo(ChatMessageComp, (prev, next) => {
   return (
     prev.message.content === next.message.content &&
     prev.message.status === next.message.status &&
-    prev.message.citations === next.message.citations
+    prev.message.citations === next.message.citations &&
+    prev.message.toolCalls === next.message.toolCalls
   );
 });

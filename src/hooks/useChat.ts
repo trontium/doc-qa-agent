@@ -1,7 +1,7 @@
 'use client';
 import { useCallback, useRef, useState } from 'react';
 import { useChatStore } from '@/store/chatStore';
-import type { Message, Citation } from '@/types/message';
+import type { Message, Citation, ToolCall } from '@/types/message';
 
 /**
  * useChat · Day 3 版本
@@ -108,12 +108,24 @@ export function useChat() {
               const evt = JSON.parse(data) as
                 | { type: 'citations'; citations: Citation[] }
                 | { type: 'content'; chunk: string }
+                | { type: 'tool_call'; name: string; status: 'running' | 'done' }
                 | { type: 'error'; error: string };
 
               if (evt.type === 'citations') {
                 store.getState().updateLast({ citations: evt.citations });
               } else if (evt.type === 'content') {
                 pushChunk(evt.chunk);
+              } else if (evt.type === 'tool_call') {
+                const cur = store.getState().messages.at(-1);
+                const prev: ToolCall[] = cur?.toolCalls ?? [];
+                const idx = prev.findIndex((t) => t.name === evt.name);
+                const next: ToolCall[] =
+                  idx >= 0
+                    ? prev.map((t, i) =>
+                        i === idx ? { ...t, status: evt.status } : t
+                      )
+                    : [...prev, { name: evt.name, status: evt.status }];
+                store.getState().updateLast({ toolCalls: next });
               } else if (evt.type === 'error') {
                 store.getState().updateLast({
                   status: 'error',
