@@ -12,10 +12,11 @@ async function parseFile(file: File): Promise<string> {
   const name = file.name.toLowerCase();
 
   if (name.endsWith('.pdf')) {
-    // pdf-parse 是 CJS，动态 import 避免 build 时 top-level 报错
-    const pdf = (await import('pdf-parse')).default;
-    const data = await pdf(buf);
-    return data.text;
+    // pdf-parse 2.x：class API（不再是默认导出函数）
+    const { PDFParse } = await import('pdf-parse');
+    const parser = new PDFParse({ data: buf });
+    const result = await parser.getText();
+    return result.text;
   }
   if (name.endsWith('.docx')) {
     const mammoth = await import('mammoth');
