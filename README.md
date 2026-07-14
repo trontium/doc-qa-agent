@@ -3,7 +3,7 @@
 > RAG + Function Calling + LangGraph 全栈开源 Agent。
 > 覆盖 **文档上传 → 向量化入库 → 混合检索 → 工具编排 → 流式对话 → 引用溯源** 全链路。
 
-**🎬 在线 Demo**：https://doc-qa-agent.vercel.app （首次上传约 5s、首字延迟约 1s）
+**🎬 在线 Demo**：https://doc-qa-agent-six.vercel.app （首次上传约 5s、首字延迟约 1s）
 **📦 GitHub**：https://github.com/trontium/doc-qa-agent
 
 ---
