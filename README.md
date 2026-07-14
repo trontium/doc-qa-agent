@@ -1,36 +1,60 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 智能文档问答 Agent
 
-## Getting Started
+RAG + Function Calling + LangGraph 全栈 Agent。
 
-First, run the development server:
+**技术栈**：Next.js 15 App Router · TypeScript · Tailwind v4 · shadcn/ui · Zustand · LangChain.js · LangGraph.js · pgvector · Supabase · SSE
+
+## 功能（迭代中）
+
+- [x] Next.js 骨架 + shadcn/ui + Zustand 消息状态机
+- [ ] 文档上传 + pgvector 向量化入库
+- [ ] Hybrid Search 混合检索（向量 + BM25 + RRF）
+- [ ] SSE 流式对话（rAF 批量 flush + 代码块延迟高亮）
+- [ ] LangGraph createReactAgent + Function Calling 三工具
+- [ ] 引用溯源高亮
+
+## 本地开发
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+pnpm install
+cp .env.local.example .env.local  # 填入你的 API keys
 pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+访问 http://localhost:3000
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 环境变量
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+见 `.env.local.example`。需要：
+- **DeepSeek** API key（chat 模型）
+- **智谱 AI** API key（embedding 模型 · 1024 维）
+- **Supabase** URL 和 Service Key（数据库 + pgvector）
+- **Tavily** API key（Web 搜索工具）
 
-## Learn More
+## 数据库
 
-To learn more about Next.js, take a look at the following resources:
+在 Supabase SQL Editor 执行：
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```sql
+create extension if not exists vector;
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+create table documents (
+  id bigserial primary key,
+  content text not null,
+  metadata jsonb default '{}'::jsonb,
+  embedding vector(1024),
+  content_tsv tsvector generated always as (to_tsvector('simple', content)) stored,
+  created_at timestamptz default now()
+);
 
-## Deploy on Vercel
+create index documents_embedding_idx on documents using hnsw (embedding vector_cosine_ops);
+create index documents_content_tsv_idx on documents using gin (content_tsv);
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+create table conversations (
+  id uuid primary key default gen_random_uuid(),
+  thread_id text not null unique,
+  messages jsonb not null default '[]'::jsonb,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+```
