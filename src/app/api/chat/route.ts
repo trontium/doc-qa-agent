@@ -12,7 +12,7 @@
 
 import type { NextRequest } from 'next/server';
 import { HumanMessage, AIMessage, AIMessageChunk } from '@langchain/core/messages';
-import { agent } from '@/lib/agent';
+import { agent, getAgent } from '@/lib/agent';
 import type { Citation } from '@/types/message';
 
 export const runtime = 'nodejs';
@@ -58,7 +58,9 @@ export async function POST(req: NextRequest) {
       req.signal.addEventListener('abort', () => abort.abort());
 
       try {
-        const events = agent.streamEvents(
+        // 获取 agent（MCP 模式时从 MCP Server 动态发现工具，否则用硬编码工具）
+        const activeAgent = await getAgent();
+        const events = activeAgent.streamEvents(
           { messages: langchainMessages },
           {
             configurable: { thread_id: threadId },
