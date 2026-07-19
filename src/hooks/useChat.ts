@@ -108,7 +108,7 @@ export function useChat() {
               const evt = JSON.parse(data) as
                 | { type: 'citations'; citations: Citation[] }
                 | { type: 'content'; chunk: string }
-                | { type: 'tool_call'; name: string; status: 'running' | 'done' }
+                | { type: 'tool_call'; name: string; status: 'running' | 'done'; input?: string; output?: string; duration?: number; startedAt?: number }
                 | { type: 'error'; error: string };
 
               if (evt.type === 'citations') {
@@ -119,12 +119,24 @@ export function useChat() {
                 const cur = store.getState().messages.at(-1);
                 const prev: ToolCall[] = cur?.toolCalls ?? [];
                 const idx = prev.findIndex((t) => t.name === evt.name);
+                const existing = idx >= 0 ? prev[idx] : undefined;
+                const updated: ToolCall = {
+                  name: evt.name,
+                  status: evt.status,
+                  // running 时记录 input 和 startedAt，done 时记录 output 和 duration
+                  ...(evt.status === 'running'
+                    ? { input: evt.input, startedAt: evt.startedAt }
+                    : {}),
+                  ...(evt.status === 'done'
+                    ? { output: evt.output, duration: evt.duration }
+                    : {}),
+                  // 保留之前的字段（running 时已记录的 input/startedAt）
+                  ...(existing ? { input: existing.input, startedAt: existing.startedAt } : {}),
+                };
                 const next: ToolCall[] =
                   idx >= 0
-                    ? prev.map((t, i) =>
-                        i === idx ? { ...t, status: evt.status } : t
-                      )
-                    : [...prev, { name: evt.name, status: evt.status }];
+                    ? prev.map((t, i) => (i === idx ? updated : t))
+                    : [...prev, updated];
                 store.getState().updateLast({ toolCalls: next });
               } else if (evt.type === 'error') {
                 store.getState().updateLast({

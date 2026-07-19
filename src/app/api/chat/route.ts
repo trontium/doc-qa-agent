@@ -2,8 +2,8 @@
  * POST /api/chat · LangGraph Agent SSE 流式接口
  *
  * SSE 帧协议：
- *   data: {"type":"tool_call","name":"retrieve_docs","status":"running"}
- *   data: {"type":"tool_call","name":"retrieve_docs","status":"done"}
+ *   data: {"type":"tool_call","name":"retrieve_docs","status":"running","input":"...","startedAt":...}
+ *   data: {"type":"tool_call","name":"retrieve_docs","status":"done","output":"...","duration":...}
  *   data: {"type":"citations","citations":[...]}         // retrieve_docs 结束时补发
  *   data: {"type":"content","chunk":"回答..."}
  *   data: {"type":"error","error":"..."}
@@ -68,21 +68,37 @@ export async function POST(req: NextRequest) {
           }
         );
 
+        // 跟踪工具调用开始时间，用于计算耗时
+        const toolStartTimes = new Map<string, number>();
+
         for await (const evt of events) {
-          // 工具调用开始
+          // 工具调用开始——透传输入参数
           if (evt.event === 'on_tool_start') {
+            const startedAt = Date.now();
+            toolStartTimes.set(evt.name, startedAt);
+            const input = evt.data?.input;
             send(ctrl, {
               type: 'tool_call',
               name: evt.name,
               status: 'running',
+              input: typeof input === 'string' ? input : JSON.stringify(input ?? {}),
+              startedAt,
             });
           }
-          // 工具调用结束
+          // 工具调用结束——透传输出结果 + 耗时
           if (evt.event === 'on_tool_end') {
+            const startTime = toolStartTimes.get(evt.name);
+            const duration = startTime ? Date.now() - startTime : undefined;
+            toolStartTimes.delete(evt.name);
+            const output = evt.data?.output;
             send(ctrl, {
               type: 'tool_call',
               name: evt.name,
               status: 'done',
+              output: typeof output === 'string'
+                ? output.length > 500 ? output.slice(0, 500) + '…' : output
+                : JSON.stringify(output ?? {}).slice(0, 500),
+              duration,
             });
             // retrieve_docs 结束后，从工具输出中提取 citations（不再二次检索）
             if (evt.name === 'retrieve_docs') {

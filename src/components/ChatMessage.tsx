@@ -5,23 +5,11 @@ import remarkGfm from 'remark-gfm';
 import rehypeHighlight from 'rehype-highlight';
 import 'highlight.js/styles/github.css';
 import type { Message } from '@/types/message';
+import { ToolCallDetail } from './ToolCallDetail';
 
 // 组件外定义避免每次新引用破坏 memo（原简历宝典 §9.2 优化点）
 const REMARK_PLUGINS = [remarkGfm];
 const REHYPE_PLUGINS = [rehypeHighlight];
-
-function toolLabel(name: string): string {
-  switch (name) {
-    case 'retrieve_docs':
-      return '📚 检索知识库';
-    case 'web_search':
-      return '🌐 搜索互联网';
-    case 'calculator':
-      return '🧮 计算器';
-    default:
-      return `🔧 ${name}`;
-  }
-}
 
 /**
  * 把 Markdown text 里出现的 [n] 转成可点击的高亮引用标记
@@ -135,25 +123,11 @@ function ChatMessageComp({ message }: { message: Message }) {
           )}
         </div>
 
-        {/* 工具调用状态徽章 */}
+        {/* 工具调用状态：可展开详情 */}
         {!isUser && message.toolCalls && message.toolCalls.length > 0 && (
           <div className="flex flex-wrap gap-1.5 mb-2">
             {message.toolCalls.map((t, i) => (
-              <span
-                key={`${t.name}-${i}`}
-                className={`inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full border ${
-                  t.status === 'running'
-                    ? 'bg-yellow-50 border-yellow-300 text-yellow-800'
-                    : 'bg-green-50 border-green-300 text-green-800'
-                }`}
-              >
-                {t.status === 'running' ? (
-                  <span className="w-1.5 h-1.5 rounded-full bg-yellow-500 animate-pulse" />
-                ) : (
-                  <span className="text-green-600">✓</span>
-                )}
-                {toolLabel(t.name)}
-              </span>
+              <ToolCallDetail key={`${t.name}-${i}`} toolCall={t} />
             ))}
           </div>
         )}

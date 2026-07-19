@@ -9,6 +9,10 @@ export interface Citation {
 export interface ToolCall {
   name: string;
   status: 'running' | 'done';
+  input?: string;
+  output?: string;
+  duration?: number; // ms
+  startedAt?: number; // timestamp
 }
 
 export interface Message {
