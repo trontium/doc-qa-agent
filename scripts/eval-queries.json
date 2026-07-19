@@ -1,0 +1,92 @@
+[
+  {
+    "id": 1,
+    "query": "Z公司招聘管理存在什么问题",
+    "category": "直接匹配",
+    "ground_truth_keywords": ["招聘管理", "Z公司", "基层员工"]
+  },
+  {
+    "id": 2,
+    "query": "胜任力模型是谁提出的",
+    "category": "细节追问",
+    "ground_truth_keywords": ["麦克利兰", "20世纪70年代"]
+  },
+  {
+    "id": 3,
+    "query": "为什么传统智力测试不够",
+    "category": "语义相似-换词",
+    "ground_truth_keywords": ["智力测试", "无法全面", "预测"]
+  },
+  {
+    "id": 4,
+    "query": "怎么解决招不到合适的人的问题",
+    "category": "口语化表述",
+    "ground_truth_keywords": ["人岗匹配", "岗位分析", "胜任力"]
+  },
+  {
+    "id": 5,
+    "query": "recruitment channel diversification",
+    "category": "英文查询中文文档",
+    "ground_truth_keywords": ["招聘渠道", "拓展", "多元化"]
+  },
+  {
+    "id": 6,
+    "query": "公司招人没计划会怎样",
+    "category": "口语化表述",
+    "ground_truth_keywords": ["招聘规划", "缺乏", "不科学"]
+  },
+  {
+    "id": 7,
+    "query": "胜任力模型和岗位分析有什么关系",
+    "category": "概念关联",
+    "ground_truth_keywords": ["胜任力模型", "岗位分析", "岗位说明书"]
+  },
+  {
+    "id": 8,
+    "query": "工人干活不长久总辞职怎么办",
+    "category": "口语化表述",
+    "ground_truth_keywords": ["离职", "流失", "人员流动"]
+  },
+  {
+    "id": 9,
+    "query": "面试流程太随意怎么改",
+    "category": "口语化表述",
+    "ground_truth_keywords": ["招聘流程", "不规范", "流程"]
+  },
+  {
+    "id": 10,
+    "query": "what is competency model",
+    "category": "英文查询中文文档",
+    "ground_truth_keywords": ["胜任力", "胜任特征", "动机", "个性"]
+  },
+  {
+    "id": 11,
+    "query": "精密制造行业招人难吗",
+    "category": "口语化表述",
+    "ground_truth_keywords": ["光学精密", "制造", "招聘"]
+  },
+  {
+    "id": 12,
+    "query": "新员工干不了多久就走怎么办",
+    "category": "口语化表述",
+    "ground_truth_keywords": ["新员工", "离职", "流失"]
+  },
+  {
+    "id": 13,
+    "query": "how to improve job matching",
+    "category": "英文查询中文文档",
+    "ground_truth_keywords": ["人岗匹配", "岗位匹配"]
+  },
+  {
+    "id": 14,
+    "query": "岗位说明书写什么内容",
+    "category": "细节追问",
+    "ground_truth_keywords": ["岗位说明书", "工作职责", "任职资格"]
+  },
+  {
+    "id": 15,
+    "query": "薪酬和招聘管理有什么关系",
+    "category": "概念关联-易混淆",
+    "ground_truth_keywords": ["薪酬", "招聘", "绩效"]
+  }
+]
