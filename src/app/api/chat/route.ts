@@ -11,9 +11,8 @@
  */
 
 import type { NextRequest } from 'next/server';
-import { HumanMessage, AIMessageChunk } from '@langchain/core/messages';
+import { HumanMessage, AIMessage, AIMessageChunk } from '@langchain/core/messages';
 import { agent } from '@/lib/agent';
-import { hybridSearch } from '@/lib/rag';
 import type { Citation } from '@/types/message';
 
 export const runtime = 'nodejs';
@@ -32,10 +31,20 @@ export async function POST(req: NextRequest) {
     return Response.json({ error: 'invalid json' }, { status: 400 });
   }
   const { messages, threadId = 'default' } = payload;
+  if (!messages.length) {
+    return Response.json({ error: 'messages cannot be empty' }, { status: 400 });
+  }
   const lastUser = messages[messages.length - 1];
-  if (!lastUser || lastUser.role !== 'user') {
+  if (lastUser.role !== 'user') {
     return Response.json({ error: 'last message must be user' }, { status: 400 });
   }
+
+  // 将前端 messages 全部转为 LangChain Message 格式（支持多轮上下文）
+  const langchainMessages = messages.map((m) =>
+    m.role === 'user'
+      ? new HumanMessage(m.content)
+      : new AIMessage(m.content)
+  );
 
   const encoder = new TextEncoder();
   const send = (
@@ -50,7 +59,7 @@ export async function POST(req: NextRequest) {
 
       try {
         const events = agent.streamEvents(
-          { messages: [new HumanMessage(lastUser.content)] },
+          { messages: langchainMessages },
           {
             configurable: { thread_id: threadId },
             version: 'v2',
@@ -75,20 +84,26 @@ export async function POST(req: NextRequest) {
               name: evt.name,
               status: 'done',
             });
-            // retrieve_docs 结束后，补发一次 citations（前端拿来渲染引用卡片）
+            // retrieve_docs 结束后，从工具输出中提取 citations（不再二次检索）
             if (evt.name === 'retrieve_docs') {
               try {
-                const query =
-                  (evt.data?.input as { query?: string } | undefined)?.query ??
-                  lastUser.content;
-                const docs = await hybridSearch(query, 5);
-                const citations: Citation[] = docs.map((d, i) => ({
-                  index: i + 1,
-                  content: d.content,
-                  source:
-                    (d.metadata as { source?: string } | null)?.source ?? '未知',
-                }));
-                send(ctrl, { type: 'citations', citations });
+                const output = typeof evt.data?.output === 'string'
+                  ? evt.data.output
+                  : String(evt.data?.output ?? '');
+                // 工具输出格式：[1] (来源：xxx)\n内容\n\n---\n\n[2] (来源：yyy)\n内容
+                const citations: Citation[] = [];
+                const regex = /\[(\d+)\]\s*\(来源：([^)]*)\)\n([\s\S]*?)(?=\n\n---\n\n|\s*$)/g;
+                let match;
+                while ((match = regex.exec(output)) !== null) {
+                  citations.push({
+                    index: Number(match[1]),
+                    content: match[3].trim(),
+                    source: match[2] || '未知',
+                  });
+                }
+                if (citations.length) {
+                  send(ctrl, { type: 'citations', citations });
+                }
               } catch {
                 /* 补发失败不影响主流 */
               }

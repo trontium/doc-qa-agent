@@ -45,6 +45,14 @@ export function splitText(
     if (piece.length > chunkSize) {
       const restSeparators = separators.slice(separators.indexOf(sep) + 1);
       const subChunks = splitText(piece, { chunkSize, chunkOverlap, separators: restSeparators.length ? restSeparators : [''] });
+      // 如果有 overlap 且前面有内容，将 buf 尾部拼接到 subChunks 首段
+      if (subChunks.length > 0 && chunkOverlap > 0 && buf) {
+        subChunks[0] = buf.slice(-chunkOverlap) + subChunks[0];
+        // 如果拼接后首段超长，截断到 chunkSize
+        if (subChunks[0].length > chunkSize) {
+          subChunks[0] = subChunks[0].slice(-chunkSize);
+        }
+      }
       chunks.push(...subChunks);
       buf = '';
     } else {
