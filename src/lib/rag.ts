@@ -5,7 +5,7 @@
  *   1. 用户 query → 智谱 embedding → 向量检索 top-N（余弦相似度）
  *   2. 用户 query → BM25 全文检索 top-N（ts_rank）
  *   3. RRF 融合：score = 1 / (k + rank)，k=60
- *   4. Cohere Rerank 交叉编码器精排（可选，需 COHERE_API_KEY）
+ *   4. Cross-Encoder Rerank 精排（可选，需 SILICONFLOW_API_KEY）
  *   5. 返回 top-K 段（默认 5）
  *
  * 解决"意思对但字面不匹配"的召回缺失（专有名词/代码/数字）。
@@ -56,7 +56,7 @@ function rrf(lists: RetrievedChunk[][], k = 60): RetrievedChunk[] {
  * @param query 用户查询
  * @param topK 最终返回段数
  * @param perRoute 每路召回段数（向量 / 关键词各自）
- * @param useRerank 是否使用 Cohere Rerank 精排（默认 true，无 key 时自动降级）
+ * @param useRerank 是否使用 Cross-Encoder Rerank 精排（默认 true，无 key 时自动降级）
  */
 export async function hybridSearch(
   query: string,
