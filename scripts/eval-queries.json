@@ -88,5 +88,275 @@
     "query": "薪酬和招聘管理有什么关系",
     "category": "概念关联-易混淆",
     "ground_truth_keywords": ["薪酬", "招聘", "绩效"]
+  },
+  {
+    "id": 16,
+    "query": "什么是 Native Sparse Attention",
+    "category": "专有名词精确匹配",
+    "ground_truth_keywords": ["Native Sparse Attention", "NSA", "sparse"]
+  },
+  {
+    "id": 17,
+    "query": "KV cache 压缩中 token 数量和精度怎么权衡",
+    "category": "技术细节",
+    "ground_truth_keywords": ["token", "precision", "KV cache", "pruning"]
+  },
+  {
+    "id": 18,
+    "query": "RAG 系统中 retriever 怎么增强 generator",
+    "category": "英文术语+概念关联",
+    "ground_truth_keywords": ["retriever", "generator", "augment", "retrieval-augmented"]
+  },
+  {
+    "id": 19,
+    "query": "怎么让大模型推理时少生成冗余 token",
+    "category": "口语化技术问题",
+    "ground_truth_keywords": ["token budget", "TALE", "reasoning", "冗余"]
+  },
+  {
+    "id": 20,
+    "query": "RAG 有哪些安全和隐私风险",
+    "category": "概念关联-跨文档",
+    "ground_truth_keywords": ["privacy", "safety", "adversarial", "trustworthy"]
+  },
+  {
+    "id": 21,
+    "query": "NSA 和 Full Attention 的速度对比",
+    "category": "术语精确+对比",
+    "ground_truth_keywords": ["NSA", "Full Attention", "speedup", "sparse"]
+  },
+  {
+    "id": 22,
+    "query": "KV cache 量化剪枝哪个更有效",
+    "category": "技术对比",
+    "ground_truth_keywords": ["quantization", "pruning", "KV cache", "token-precision"]
+  },
+  {
+    "id": 23,
+    "query": "how does cross-encoder reranking work in RAG",
+    "category": "英文跨文档",
+    "ground_truth_keywords": ["cross-encoder", "rerank", "retrieval", "fusion"]
+  },
+  {
+    "id": 24,
+    "query": "长文本建模有什么挑战",
+    "category": "语义模糊-多文档命中",
+    "ground_truth_keywords": ["long context", "attention", "复杂度", "KV cache"]
+  },
+  {
+    "id": 25,
+    "query": "reciprocal rank fusion 是什么",
+    "category": "专有名词精确匹配",
+    "ground_truth_keywords": ["RRF", "reciprocal rank", "fusion"]
+  },
+  {
+    "id": 26,
+    "query": "模型的幻觉问题怎么缓解",
+    "category": "口语化-跨文档",
+    "ground_truth_keywords": ["hallucination", "RAG", "retrieval"]
+  },
+  {
+    "id": 27,
+    "query": "DeepSeek 的稀疏注意力机制原理",
+    "category": "专有名词+技术细节",
+    "ground_truth_keywords": ["DeepSeek", "NSA", "sparse attention", "compression"]
+  },
+  {
+    "id": 28,
+    "query": "embedding 模型和 reranker 有什么区别",
+    "category": "概念对比-跨文档",
+    "ground_truth_keywords": ["embedding", "reranker", "bi-encoder", "cross-encoder"]
+  },
+  {
+    "id": 29,
+    "query": "怎么评估 RAG 系统的好坏",
+    "category": "开放性问题-跨文档",
+    "ground_truth_keywords": ["evaluation", "benchmark", "RAG", "metrics"]
+  },
+  {
+    "id": 30,
+    "query": "推理时怎么减少显存占用",
+    "category": "口语化-多文档命中",
+    "ground_truth_keywords": ["KV cache", "memory", "显存", "compression"]
+  },
+  {
+    "id": 31,
+    "query": "知识图谱怎么增强 RAG 检索效果",
+    "category": "跨文档混淆-多份RAG论文",
+    "ground_truth_keywords": ["knowledge graph", "GraphRAG", "entity", "graph-based"]
+  },
+  {
+    "id": 32,
+    "query": "LLM Agent 怎么做任务规划",
+    "category": "专有名词精确匹配",
+    "ground_truth_keywords": ["planning", "task decomposition", "agent", "goal"]
+  },
+  {
+    "id": 33,
+    "query": "思维链 CoT 提示和思维树 ToT 有什么区别",
+    "category": "概念对比-跨文档",
+    "ground_truth_keywords": ["Chain-of-Thought", "Tree-of-Thoughts", "branching", "backtracking"]
+  },
+  {
+    "id": 34,
+    "query": "few-shot prompting 的原理是什么",
+    "category": "专有名词精确匹配",
+    "ground_truth_keywords": ["few-shot", "demonstration", "in-context learning"]
+  },
+  {
+    "id": 35,
+    "query": "RAG 检索器和生成器怎么交互",
+    "category": "跨文档混淆-多份RAG论文",
+    "ground_truth_keywords": ["retriever-generator", "fusion-in-decoder", "retrieve-then-generate", "retrieval-augmented"]
+  },
+  {
+    "id": 36,
+    "query": "大模型 System 1 和 System 2 推理有什么区别",
+    "category": "专有名词+概念对比",
+    "ground_truth_keywords": ["System 1", "System 2", "fast", "slow", "reasoning"]
+  },
+  {
+    "id": 37,
+    "query": "Agent 怎么选择合适的工具",
+    "category": "口语化技术问题",
+    "ground_truth_keywords": ["tool selection", "tool learning", "retrieval", "tool description"]
+  },
+  {
+    "id": 38,
+    "query": "graph-based RAG 和普通 RAG 的区别",
+    "category": "概念对比-跨文档",
+    "ground_truth_keywords": ["graph", "topology", "entity relationship", "structured"]
+  },
+  {
+    "id": 39,
+    "query": "怎么让 Agent 自己创建新工具",
+    "ground_truth_keywords": ["tool creation", "tool maker", "automated", "new tool"],
+    "category": "开放性问题"
+  },
+  {
+    "id": 40,
+    "query": "RAG 中的 query rewrite 有哪些方法",
+    "category": "技术细节-跨文档混淆",
+    "ground_truth_keywords": ["query rewrite", "query expansion", "reformulation", "HyDE"]
+  },
+  {
+    "id": 41,
+    "query": "大模型能不能自我反思和纠正错误",
+    "category": "口语化技术问题",
+    "ground_truth_keywords": ["self-reflection", "self-correction", "refine", "reflection"]
+  },
+  {
+    "id": 42,
+    "query": "single agent 和 multi agent 哪个更好",
+    "category": "概念对比",
+    "ground_truth_keywords": ["single-agent", "multi-agent", "collaboration", "specialization"]
+  },
+  {
+    "id": 43,
+    "query": "ReAct 模式怎么结合推理和行动",
+    "category": "专有名词+技术细节",
+    "ground_truth_keywords": ["ReAct", "reasoning", "acting", "observation"]
+  },
+  {
+    "id": 44,
+    "query": "what are the main retrieval fusion methods in RAG",
+    "category": "英文跨文档混淆",
+    "ground_truth_keywords": ["fusion", "RRF", "reciprocal rank", "dense", "sparse"]
+  },
+  {
+    "id": 45,
+    "query": "大模型工具学习的四个阶段是什么",
+    "category": "细节追问",
+    "ground_truth_keywords": ["task planning", "tool selection", "tool calling", "response generation"]
+  },
+  {
+    "id": 46,
+    "query": "prompt engineering 中的自动提示优化怎么做",
+    "category": "技术细节",
+    "ground_truth_keywords": ["APE", "OPRO", "automatic prompt", "optimization"]
+  },
+  {
+    "id": 47,
+    "query": "RAG 的预训练和微调分别怎么训练",
+    "category": "技术细节-跨文档混淆",
+    "ground_truth_keywords": ["pre-training", "fine-tuning", "RAG", "retriever training"]
+  },
+  {
+    "id": 48,
+    "query": "推理型 RAG 和普通 RAG 有什么区别",
+    "category": "概念对比-跨文档混淆",
+    "ground_truth_keywords": ["reasoning", "agentic RAG", "iterative", "multi-step"]
+  },
+  {
+    "id": 49,
+    "query": "怎么减少大模型输出的幻觉",
+    "category": "口语化-跨文档混淆",
+    "ground_truth_keywords": ["hallucination", "grounding", "verification", "factuality"]
+  },
+  {
+    "id": 50,
+    "query": "Agentic RAG 是什么架构",
+    "category": "专有名词精确匹配",
+    "ground_truth_keywords": ["agentic", "autonomous", "agent-based", "RAG"]
+  },
+  {
+    "id": 51,
+    "query": "知识图谱中的实体关系抽取怎么帮到 RAG",
+    "category": "技术细节",
+    "ground_truth_keywords": ["entity extraction", "relation", "triple", "knowledge graph"]
+  },
+  {
+    "id": 52,
+    "query": "how does self-consistency improve chain-of-thought",
+    "category": "英文精确查询",
+    "ground_truth_keywords": ["self-consistency", "voting", "CoT", "sampling"]
+  },
+  {
+    "id": 53,
+    "query": "Agent 的反思机制是怎么实现的",
+    "category": "口语化技术问题",
+    "ground_truth_keywords": ["reflection", "Reflexion", "feedback", "self-evaluation"]
+  },
+  {
+    "id": 54,
+    "query": "RAG 数据库怎么构建索引",
+    "category": "技术细节-跨文档混淆",
+    "ground_truth_keywords": ["indexing", "chunking", "embedding", "vector database"]
+  },
+  {
+    "id": 55,
+    "query": "Chain-of-Verification 是什么原理",
+    "category": "专有名词精确匹配",
+    "ground_truth_keywords": ["CoVe", "verification", "chain", "fact-check"]
+  },
+  {
+    "id": 56,
+    "query": "模型怎么学会什么时候该用工具",
+    "category": "口语化技术问题",
+    "ground_truth_keywords": ["tool invocation", "when to call", "tool usage", "trigger"]
+  },
+  {
+    "id": 57,
+    "query": "图结构和向量检索在 RAG 中怎么结合",
+    "category": "技术细节",
+    "ground_truth_keywords": ["graph", "vector", "hybrid", "traversal"]
+  },
+  {
+    "id": 58,
+    "query": "RAG 的安全攻击有哪些类型",
+    "category": "细节追问-跨文档混淆",
+    "ground_truth_keywords": ["adversarial", "poisoning", "attack", "injection"]
+  },
+  {
+    "id": 59,
+    "query": "为什么 code 能帮大模型做 Agent",
+    "category": "口语化概念关联",
+    "ground_truth_keywords": ["code", "agent", "execution", "structured"]
+  },
+  {
+    "id": 60,
+    "query": "多 Agent 系统中 Agent 之间怎么通信",
+    "category": "技术细节",
+    "ground_truth_keywords": ["communication", "multi-agent", "message", "collaboration"]
   }
 ]

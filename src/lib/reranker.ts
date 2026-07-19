@@ -1,7 +1,7 @@
 /**
- * Cohere Rerank 交叉编码器精排
+ * Cross-Encoder 精排（基于硅基流动 SiliconFlow 托管的 bge-reranker-v2-m3）
  *
- * 流程：Hybrid Search + RRF 融合后的 top-K 候选 → Cohere Rerank 精排 → 返回最相关的 top-N
+ * 流程：Hybrid Search + RRF 融合后的 top-K 候选 → Cross-Encoder 精排 → 返回最相关的 top-N
  *
  * 为什么需要精排：
  *   RRF 只基于排名融合（第1名得 1/(k+1)），不知道文档内容跟 query 到底有多相关。
@@ -9,9 +9,9 @@
  *   可以捕捉 query-document 之间的细粒度语义交互。
  *   但交叉编码器更慢更贵，所以只对 RRF 的 top-K 结果做精排，不是全量重排。
  *
- * API: Cohere Rerank v2 (POST https://api.cohere.com/v2/rerank)
- * 模型: rerank-v3.5 (多语言支持，中文友好)
- * 免费额度: 1000 次/月
+ * API: SiliconFlow Rerank (POST https://api.siliconflow.cn/v1/rerank)
+ * 模型: BAAI/bge-reranker-v2-m3 (多语言开源 reranker，中文效果优秀)
+ * 免费额度: 14 元赠送 + 部分模型免费
  */
 
 import type { RetrievedChunk } from './rag';
@@ -37,10 +37,10 @@ export async function rerank(
   candidates: RetrievedChunk[],
   topN?: number
 ): Promise<RetrievedChunk[]> {
-  const apiKey = process.env.COHERE_API_KEY;
+  const apiKey = process.env.SILICONFLOW_API_KEY;
   if (!apiKey) {
     // Rerank 是增强层，没有 API key 时降级为直接返回 RRF 结果
-    console.warn('[rerank] COHERE_API_KEY not set, skipping rerank');
+    console.warn('[rerank] SILICONFLOW_API_KEY not set, skipping rerank');
     return topN ? candidates.slice(0, topN) : candidates;
   }
 
@@ -48,13 +48,13 @@ export async function rerank(
 
   const documents = candidates.map((c) => c.content);
   const body: Record<string, unknown> = {
-    model: 'rerank-v3.5',
+    model: 'BAAI/bge-reranker-v2-m3',
     query,
     documents,
   };
   if (topN) body.top_n = topN;
 
-  const res = await fetch('https://api.cohere.com/v2/rerank', {
+  const res = await fetch('https://api.siliconflow.cn/v1/rerank', {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${apiKey}`,
@@ -65,7 +65,7 @@ export async function rerank(
 
   if (!res.ok) {
     const errText = await res.text();
-    console.error(`[rerank] Cohere API ${res.status}: ${errText}`);
+    console.error(`[rerank] SiliconFlow API ${res.status}: ${errText}`);
     // 降级：API 异常时返回原 RRF 结果
     return topN ? candidates.slice(0, topN) : candidates;
   }

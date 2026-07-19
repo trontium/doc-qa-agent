@@ -4,14 +4,14 @@
  * 比较三种检索策略在 Top-3 / Top-5 命中率上的表现：
  *   1. 纯向量检索（pgvector HNSW 余弦相似度）
  *   2. 混合检索 + RRF 融合（向量 + BM25 + RRF）
- *   3. 混合检索 + RRF + Cohere Rerank 精排
+ *   3. 混合检索 + RRF + Cross-Encoder 精排（BAAI/bge-reranker-v2-m3）
  *
- * 运行方式：npx tsx -r dotenv/config scripts/eval.ts
+ * 运行方式：DOTENV_CONFIG_PATH=.env.local npx tsx -r dotenv/config scripts/eval.ts
  *
  * 前置条件：
  *   - .env.local 已配置 ZHIPU_API_KEY, SUPABASE_URL, SUPABASE_SERVICE_KEY
  *   - 数据库中已有文档数据
- *   - COHERE_API_KEY（可选，无则跳过 Rerank 评估）
+ *   - SILICONFLOW_API_KEY（可选，无则跳过 Rerank 评估）
  *
  * 注意：必须使用 -r dotenv/config 预加载环境变量，
  *       因为 supabase.ts 在模块级初始化时就需要 SUPABASE_URL。
