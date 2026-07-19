@@ -4,6 +4,8 @@ import type { ToolCall } from '@/types/message';
 
 function toolLabel(name: string): string {
   switch (name) {
+    case 'query_rewrite':
+      return '✏️ 查询优化';
     case 'retrieve_docs':
       return '📚 检索知识库';
     case 'web_search':

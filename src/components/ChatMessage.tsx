@@ -123,6 +123,23 @@ function ChatMessageComp({ message }: { message: Message }) {
           )}
         </div>
 
+        {/* 阶段指示器：检索中 / 生成中 */}
+        {!isUser && isStreaming && message.stage && !message.content && (
+          <div className="flex items-center gap-1.5 text-xs text-gray-500 mb-2">
+            {message.stage === 'retrieving' ? (
+              <>
+                <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
+                🔍 检索相关文档…
+              </>
+            ) : (
+              <>
+                <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                ✍️ 组织回答中…
+              </>
+            )}
+          </div>
+        )}
+
         {/* 工具调用状态：可展开详情 */}
         {!isUser && message.toolCalls && message.toolCalls.length > 0 && (
           <div className="flex flex-wrap gap-1.5 mb-2">

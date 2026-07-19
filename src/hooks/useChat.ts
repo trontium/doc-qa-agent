@@ -106,12 +106,15 @@ export function useChat() {
 
             try {
               const evt = JSON.parse(data) as
+                | { type: 'stage'; stage: 'retrieving' | 'generating' }
                 | { type: 'citations'; citations: Citation[] }
                 | { type: 'content'; chunk: string }
                 | { type: 'tool_call'; name: string; status: 'running' | 'done'; input?: string; output?: string; duration?: number; startedAt?: number }
                 | { type: 'error'; error: string };
 
-              if (evt.type === 'citations') {
+              if (evt.type === 'stage') {
+                store.getState().updateLast({ stage: evt.stage });
+              } else if (evt.type === 'citations') {
                 store.getState().updateLast({ citations: evt.citations });
               } else if (evt.type === 'content') {
                 pushChunk(evt.chunk);

@@ -1,4 +1,5 @@
 export type MessageStatus = 'sending' | 'streaming' | 'done' | 'error' | 'aborted';
+export type StageStatus = 'retrieving' | 'generating';
 
 export interface Citation {
   index: number;
@@ -20,6 +21,7 @@ export interface Message {
   role: 'user' | 'assistant';
   content: string;
   status: MessageStatus;
+  stage?: StageStatus;
   citations?: Citation[];
   toolCalls?: ToolCall[];
   createdAt: number;

@@ -1,29 +1,25 @@
 /**
- * LangGraph ReAct Agent — 支持 MCP 工具动态发现
+ * Agent 管理 — 支持 3 种模式
+ *
+ * 1. 默认模式（单 Agent + 硬编码工具）— 生产环境
+ * 2. Pipeline 模式（2-Stage: Retriever → Generator）— 生产环境，解耦检索与生成
+ * 3. MCP 模式（单 Agent + 动态工具发现）— 本地开发
  *
  * 架构决策：
- *   - 默认使用硬编码工具（无需 MCP，部署兼容）
- *   - 设置 ENABLE_MCP=true 时，从 MCP Server 动态获取工具
- *   - Vercel 部署时 MCP 不可用（无法 spawn 子进程），自动降级为硬编码工具
- *   - 两种模式共享同一个 agent 结构，工具来源对上层透明
+ *   - Pipeline 模式：检索是确定性管道，不需要 Agent 决策"要不要检索"，
+ *     拆开后检索 prompt 专注查询优化，生成 prompt 专注回答质量
+ *   - MCP 模式：通过 ENABLE_MCP=true 开启，STDIO 传输，Serverless 自动降级
+ *   - 三种模式共享 LLM 实例和 checkpointer
  */
 
-import { ChatOpenAI } from '@langchain/openai';
 import { createReactAgent } from '@langchain/langgraph/prebuilt';
 import { MemorySaver } from '@langchain/langgraph';
+import { llm } from './llm';
 import { tools as hardcodedTools } from './tools';
 
-const llm = new ChatOpenAI({
-  model: 'deepseek-chat',
-  temperature: 0,
-  streaming: true,
-  configuration: {
-    baseURL: 'https://api.deepseek.com/v1',
-    apiKey: process.env.DEEPSEEK_API_KEY,
-  },
-});
-
 const checkpointer = new MemorySaver();
+
+// ---------- System Prompts ----------
 
 const SYSTEM_PROMPT = `你是一个专业助手，可以调用工具帮助回答问题。
 
@@ -39,7 +35,21 @@ const SYSTEM_PROMPT = `你是一个专业助手，可以调用工具帮助回答
 - 使用 calculator 后，直接给出结果
 - 如果知识库/网络中都没有答案，说"我没有找到相关信息"，不要编造`;
 
-// 默认 agent（硬编码工具，始终可用）
+/**
+ * Stage 2 的 System Prompt — 基于检索上下文组织回答
+ * 和通用 prompt 的区别：不需要 retrieve_docs（Stage 1 已完成检索）
+ */
+const PIPELINE_GENERATOR_PROMPT = `你是一个专业助手。检索阶段已经为你找到了相关文档内容，你需要基于这些内容组织回答。
+
+回答规范：
+- 严格基于检索到的上下文回答，用 [1] [2] 引用对应段落
+- 如果上下文不足以回答问题，说"我没有找到相关信息"，不要编造
+- 如果用户问的是数学计算，使用 calculator 工具
+- 如果用户问的是实时信息（新闻、天气、汇率），使用 web_search 工具
+- 回答要简洁准确，不要重复上下文中的大段原文`;
+
+// ---------- Agent 1: 默认（单 Agent + 硬编码工具）----------
+
 export const agent = createReactAgent({
   llm,
   tools: hardcodedTools,
@@ -47,15 +57,24 @@ export const agent = createReactAgent({
   prompt: SYSTEM_PROMPT,
 });
 
-/**
- * 获取 MCP Agent（动态工具发现模式）
- * 仅在 ENABLE_MCP=true 时调用
- */
+// ---------- Agent 2: Pipeline Generator（Stage 2）----------
+
+const generatorTools = hardcodedTools.filter(
+  (t) => t.name !== 'retrieve_docs'
+);
+
+const pipelineGenerator = createReactAgent({
+  llm,
+  tools: generatorTools,
+  checkpointer,
+  prompt: PIPELINE_GENERATOR_PROMPT,
+});
+
+// ---------- MCP Agent（动态工具发现）----------
+
 let mcpAgentPromise: ReturnType<typeof createReactAgent> | null = null;
 
-export async function getAgent() {
-  if (process.env.ENABLE_MCP !== 'true') return agent;
-
+async function getMCPAgent() {
   if (!mcpAgentPromise) {
     mcpAgentPromise = (async () => {
       try {
@@ -80,4 +99,26 @@ export async function getAgent() {
     })();
   }
   return mcpAgentPromise;
+}
+
+// ---------- 对外接口 ----------
+
+/**
+ * 获取当前模式下的 Agent
+ *
+ * 优先级：
+ *   1. ENABLE_MCP=true → MCP Agent（动态工具发现）
+ *   2. 默认 → 单 Agent + 硬编码工具
+ */
+export async function getAgent() {
+  if (process.env.ENABLE_MCP === 'true') return getMCPAgent();
+  return agent;
+}
+
+/**
+ * 获取 Pipeline Generator Agent（Stage 2）
+ * 只保留 calculator + web_search，不含 retrieve_docs
+ */
+export function getPipelineGenerator() {
+  return pipelineGenerator;
 }
