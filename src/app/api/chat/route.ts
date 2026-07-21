@@ -158,7 +158,10 @@ async function handlePipeline(
   );
 
   const contextMessage = new HumanMessage(
-    `基于以下检索结果回答问题：\n\n${result.context}\n\n用户问题：${userQuery}`
+    `${result.hasValidContext
+      ? `基于以下检索结果回答问题：\n\n${result.context}`
+      : `⚠️ 检索阶段未从知识库中找到有效内容（可能是不相关问题、或知识库内容是 PDF 解析失败产物）。\n请主动判断：\n- 如果是实时信息（新闻、年份、汇率等），调用 web_search\n- 如果是数学计算，调用 calculator\n- 否则直接回答用户`
+    }\n\n用户问题：${userQuery}`
   );
 
   const langchainMessages = [...historyMessages, contextMessage];

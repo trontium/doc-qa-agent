@@ -5,6 +5,8 @@ import { Upload, FileText, Trash2, Loader2 } from 'lucide-react';
 
 interface DocumentItem {
   source: string;
+  /** 前端展示名（孤儿文档会显示 "(无 source · 孤儿文档)"）*/
+  displaySource?: string;
   chunks: number;
   uploadedAt: string;
 }
@@ -118,12 +120,17 @@ export function DocumentSidebar() {
               key={d.source}
               className="text-xs border rounded p-2 flex items-start gap-2 hover:bg-gray-50 group"
             >
-              <FileText className="w-4 h-4 text-blue-500 shrink-0 mt-0.5" />
+              <FileText className={`w-4 h-4 shrink-0 mt-0.5 ${d.source === '__null_source__' ? 'text-red-400' : 'text-blue-500'}`} />
               <div className="flex-1 min-w-0">
                 <div className="truncate font-medium" title={d.source}>
-                  {d.source}
+                  {d.displaySource ?? d.source}
                 </div>
-                <div className="text-gray-500 mt-0.5">{d.chunks} 段</div>
+                <div className="text-gray-500 mt-0.5">
+                  {d.chunks} 段
+                  {d.source === '__null_source__' && (
+                    <span className="ml-1 text-red-500">· 建议删除</span>
+                  )}
+                </div>
               </div>
               <button
                 className="opacity-0 group-hover:opacity-100 transition text-red-500 hover:text-red-700"

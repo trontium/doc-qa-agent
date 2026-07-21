@@ -29,6 +29,22 @@ async function parseFile(file: File): Promise<string> {
   throw new Error(`unsupported file type: ${file.name}`);
 }
 
+/**
+ * 检测 PDF 解析失败产物：\u00000c/uni00000055/... 这种格式
+ * pdfjs 在 ToUnicode CMap 缺失时输出原始字符编码
+ */
+function isGarbageText(text: string): boolean {
+  if (!text) return true;
+  const sample = text.slice(0, 2000);
+  const uniCount = (sample.match(/uni\d{6}/g) ?? []).length;
+  const escapeCount = (sample.match(/\\u[0-9a-fA-F]{4}/g) ?? []).length;
+  if (uniCount > 5 || escapeCount > 5) return true;
+  // 几乎全部是非打印字符
+  const printable = sample.replace(/[\s\u0000-\u001f\u007f-\u009f]/g, '').length;
+  if (sample.length > 100 && printable / sample.length < 0.3) return true;
+  return false;
+}
+
 export async function POST(req: NextRequest) {
   try {
     const form = await req.formData();
@@ -39,6 +55,14 @@ export async function POST(req: NextRequest) {
     const text = await parseFile(file);
     if (!text.trim()) {
       return NextResponse.json({ error: 'empty file' }, { status: 400 });
+    }
+
+    // 1.5 检测 PDF 解析失败（输出是 unicode 转义字符）
+    if (isGarbageText(text)) {
+      return NextResponse.json({
+        error:
+          'PDF 解析失败：可能是扫描件或字体编码缺失。建议：① 用其他 PDF 提取工具（pdftotext / Adobe）转一遍；② 或转成 Markdown/TXT 上传',
+      }, { status: 400 });
     }
 
     // 2. 递归切分（中文分隔符友好）
