@@ -8,7 +8,8 @@ export const runtime = 'nodejs';
 export const maxDuration = 60;
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
-const MAX_TOTAL_DOCS = 50;
+const MAX_TOTAL_DOCS = 20;  // 最多 20 个文档（按 source 分组计数，不是 chunk 数）
+const MAX_TOTAL_CHUNKS = 2000; // chunk 硬上限（防止向量搜索变慢）
 
 async function parseFile(file: File): Promise<string> {
   const buf = Buffer.from(await file.arrayBuffer());
@@ -61,13 +62,30 @@ export async function POST(req: NextRequest) {
       }, { status: 413 });
     }
 
-    // 文档总数限制
-    const { count } = await supabase
+    // 文档数限制（按 source 分组计数，不是 chunk 行数）
+    const { data: allMeta } = await supabase
       .from('documents')
-      .select('id', { count: 'exact', head: true });
-    if ((count ?? 0) >= MAX_TOTAL_DOCS) {
+      .select('metadata')
+      .limit(10000);
+    const uniqueSources = new Set(
+      (allMeta ?? []).map((r) => {
+        const s = (r.metadata as Record<string, unknown>)?.source;
+        return typeof s === 'string' && s ? s : '__orphan__';
+      })
+    );
+    if (uniqueSources.size >= MAX_TOTAL_DOCS) {
       return NextResponse.json({
         error: `知识库已满（${MAX_TOTAL_DOCS} 个文档上限），请先删除旧文档再上传`,
+      }, { status: 413 });
+    }
+
+    // chunk 总数硬上限
+    const { count: chunkCount } = await supabase
+      .from('documents')
+      .select('id', { count: 'exact', head: true });
+    if ((chunkCount ?? 0) >= MAX_TOTAL_CHUNKS) {
+      return NextResponse.json({
+        error: `知识库 chunk 数已达上限（${MAX_TOTAL_CHUNKS}），请先删除旧文档`,
       }, { status: 413 });
     }
 
