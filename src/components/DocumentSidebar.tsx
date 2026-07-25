@@ -14,7 +14,7 @@ import { Button } from '@/components/ui/button';
 /** 桌面端：固定 aside 侧边栏 */
 export function DocumentSidebar() {
   return (
-    <aside className="hidden md:flex w-72 border-r bg-white flex-col">
+    <aside className="hidden md:flex w-72 border-r border-gray-200/60 bg-gradient-to-b from-white to-slate-50/50 flex-col">
       <SidebarContent />
     </aside>
   );

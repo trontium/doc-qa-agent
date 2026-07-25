@@ -112,10 +112,15 @@ export function SidebarContent({ onAction }: { onAction?: () => void }) {
   }
 
   return (
-    <div className="flex flex-col gap-4 overflow-y-auto p-4">
-      <div>
-        <h2 className="font-bold text-lg mb-1">📚 知识库</h2>
-        <p className="text-xs text-gray-500">上传文档后，Agent 可从中检索答案</p>
+    <div className="flex flex-col gap-4 overflow-y-auto p-4 h-full">
+      <div className="relative rounded-xl bg-gradient-to-br from-blue-500 via-violet-500 to-purple-600 p-4 text-white shadow-lg shadow-violet-200/50">
+        <div className="flex items-center gap-2">
+          <span className="text-2xl">📚</span>
+          <div>
+            <h2 className="font-bold text-lg leading-tight">知识库</h2>
+            <p className="text-xs text-white/70">上传文档，Agent 从中检索答案</p>
+          </div>
+        </div>
       </div>
 
       <div>
@@ -128,7 +133,7 @@ export function SidebarContent({ onAction }: { onAction?: () => void }) {
         />
         <Button
           variant="outline"
-          className="w-full"
+          className="w-full rounded-xl border-dashed border-gray-300 hover:border-blue-400 hover:bg-blue-50/50 transition-all"
           onClick={() => fileRef.current?.click()}
           disabled={uploading}
         >
@@ -156,12 +161,16 @@ export function SidebarContent({ onAction }: { onAction?: () => void }) {
             <div key={i} className="h-14 w-full bg-gray-100 rounded animate-pulse" />
           ))}
           {!loading && docs.length === 0 && (
-            <p className="text-xs text-gray-400 text-center py-6">还没有上传文档</p>
+            <div className="text-center py-8 space-y-2">
+              <div className="text-3xl">📄</div>
+              <p className="text-xs text-gray-400">还没有上传文档</p>
+              <p className="text-[10px] text-gray-300">点击上方按钮添加</p>
+            </div>
           )}
           {docs.map((d) => (
             <div
               key={d.source}
-              className="text-xs border rounded p-2 flex items-start gap-2 hover:bg-gray-50 group"
+              className="text-xs border border-gray-200/80 rounded-xl p-2.5 flex items-start gap-2 hover:bg-blue-50/30 hover:border-blue-200/60 group transition-all duration-150"
             >
               <FileText className={`w-4 h-4 shrink-0 mt-0.5 ${d.source === '__null_source__' ? 'text-red-400' : 'text-blue-500'}`} />
               <div className="flex-1 min-w-0">
