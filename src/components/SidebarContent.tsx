@@ -11,7 +11,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Upload, FileText, Trash2, Loader2 } from 'lucide-react';
+import { Upload, FileText, Trash2, Loader2, Key, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface DocumentItem {
@@ -28,12 +28,20 @@ export function SidebarContent({ onAction }: { onAction?: () => void }) {
   const [uploading, setUploading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+  const [showTokenInput, setShowTokenInput] = useState(false);
+  const [tokenValue, setTokenValue] = useState('');
+  const [adminSet, setAdminSet] = useState(false); // 跟踪 token 是否已设置
   const inputRef = useRef<HTMLInputElement>(null);
 
-  /** 获取管理认证头（ADMIN_TOKEN 通过 NEXT_PUBLIC 传递给前端） */
+  /** 获取管理认证头（优先 localStorage，回退 NEXT_PUBLIC 环境变量） */
   function authHeaders(): HeadersInit {
-    const token = process.env.NEXT_PUBLIC_ADMIN_TOKEN;
+    const token = localStorage.getItem('admin_token') || process.env.NEXT_PUBLIC_ADMIN_TOKEN;
     return token ? { Authorization: `Bearer ${token}` } : {};
+  }
+
+  /** 当前是否有 admin token（用于 UI 提示） */
+  function hasAdminToken(): boolean {
+    return !!(localStorage.getItem('admin_token') || process.env.NEXT_PUBLIC_ADMIN_TOKEN);
   }
 
   async function fetchDocs() {
@@ -49,6 +57,7 @@ export function SidebarContent({ onAction }: { onAction?: () => void }) {
 
   useEffect(() => {
     fetchDocs();
+    setAdminSet(hasAdminToken());
   }, []);
 
   async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
@@ -112,7 +121,14 @@ export function SidebarContent({ onAction }: { onAction?: () => void }) {
         <Button
           variant="outline"
           className="w-full"
-          onClick={() => inputRef.current?.click()}
+          onClick={() => {
+            if (!adminSet) {
+              toast.error('请先设置管理员 Token');
+              setShowTokenInput(true);
+              return;
+            }
+            inputRef.current?.click();
+          }}
           disabled={uploading}
         >
           {uploading ? (
@@ -160,7 +176,14 @@ export function SidebarContent({ onAction }: { onAction?: () => void }) {
               </div>
               <button
                 className="opacity-0 group-hover:opacity-100 transition text-red-500 hover:text-red-700"
-                onClick={() => setDeleteTarget(d.source)}
+                onClick={() => {
+                  if (!adminSet) {
+                    toast.error('请先设置管理员 Token');
+                    setShowTokenInput(true);
+                    return;
+                  }
+                  setDeleteTarget(d.source);
+                }}
                 title="删除"
               >
                 <Trash2 className="w-3.5 h-3.5" />
@@ -168,6 +191,68 @@ export function SidebarContent({ onAction }: { onAction?: () => void }) {
             </div>
           ))}
         </div>
+      </div>
+
+      {/* Admin Token 设置 */}
+      <div className="border-t pt-3 mt-auto">
+        {adminSet ? (
+          <button
+            className="text-xs text-gray-500 hover:text-gray-700 flex items-center gap-1"
+            onClick={() => {
+              localStorage.removeItem('admin_token');
+              setAdminSet(false);
+              toast.success('已清除管理员 Token');
+            }}
+          >
+            <CheckCircle2 className="w-3 h-3 text-green-500" />
+            管理员已授权 · 点击清除
+          </button>
+        ) : (
+          <div>
+            <button
+              className="text-xs text-amber-600 hover:text-amber-700 flex items-center gap-1 mb-2"
+              onClick={() => setShowTokenInput(!showTokenInput)}
+            >
+              <Key className="w-3 h-3" />
+              设置管理员 Token
+            </button>
+            {showTokenInput && (
+              <div className="flex gap-1">
+                <input
+                  type="password"
+                  placeholder="输入 Admin Token"
+                  value={tokenValue}
+                  onChange={(e) => setTokenValue(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && tokenValue.trim()) {
+                      localStorage.setItem('admin_token', tokenValue.trim());
+                      setAdminSet(true);
+                      setTokenValue('');
+                      setShowTokenInput(false);
+                      toast.success('管理员 Token 已设置');
+                    }
+                  }}
+                  className="flex-1 text-xs border rounded px-2 py-1 bg-white"
+                />
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="text-xs px-2"
+                  onClick={() => {
+                    if (!tokenValue.trim()) return;
+                    localStorage.setItem('admin_token', tokenValue.trim());
+                    setAdminSet(true);
+                    setTokenValue('');
+                    setShowTokenInput(false);
+                    toast.success('管理员 Token 已设置');
+                  }}
+                >
+                  确定
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* AlertDialog 删除确认 */}
