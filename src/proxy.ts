@@ -8,9 +8,15 @@
  * 持久化：写入 Supabase usage_logs 表，Vercel 冷启也不丢计数。
  * 频率限流（每分钟）由内存 store 处理，这里只管每日配额。
  *
+ * 安全加固：
+ *   - IP 提取取 X-Forwarded-For 最后一个值（Vercel 追加的真实 IP）
+ *   - Supabase 不可用时拒绝请求（fail-closed），不放行
+ *   - 所有写操作 API 均需 ADMIN_TOKEN 认证
+ *
  * 配置（.env.local）：
  *   DAILY_LIMIT_PER_IP=5      每个 IP 每天最多 5 次对话
  *   DAILY_LIMIT_GLOBAL=30     全局每天最多 30 次对话
+ *   ADMIN_TOKEN=your-secret   管理操作（upload/delete）的认证 token
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -20,19 +26,20 @@ import { createClient } from '@supabase/supabase-js';
 // ---- 配置 ----
 const DAILY_LIMIT_PER_IP = Number(process.env.DAILY_LIMIT_PER_IP) || 5;
 const DAILY_LIMIT_GLOBAL = Number(process.env.DAILY_LIMIT_GLOBAL) || 30;
+const ADMIN_TOKEN = process.env.ADMIN_TOKEN ?? '';
 
 // ---- 频率限流（内存，防 burst）----
 interface RateEntry { count: number; resetAt: number }
 const rateStore = new Map<string, RateEntry>();
 const RATE_RULES: Record<string, { limit: number; windowMs: number }> = {
-  '/api/chat': { limit: 6, windowMs: 60_000 },   // 6次/分（比每日配额松，防瞬间burst）
+  '/api/chat': { limit: 6, windowMs: 60_000 },
   '/api/upload': { limit: 2, windowMs: 60_000 },
+  '/api/documents': { limit: 10, windowMs: 60_000 },
 };
 
 // ---- Supabase（用量持久化）----
 const supabaseUrl = process.env.SUPABASE_URL ?? '';
 const supabaseKey = process.env.SUPABASE_SERVICE_KEY ?? '';
-// 懒初始化：proxy 运行在 Edge，不能在模块顶层 createClient（env 还没注入）
 let _supabase: ReturnType<typeof createClient> | null = null;
 function getSupabase() {
   if (!_supabase && supabaseUrl && supabaseKey) {
@@ -44,14 +51,20 @@ function getSupabase() {
 }
 
 // ---- 工具函数 ----
+/**
+ * 提取客户端真实 IP。
+ * Vercel 在 X-Forwarded-For 末尾追加真实 IP，取最后一个值防止伪造。
+ */
 function getIP(req: NextRequest): string {
   const forwarded = req.headers.get('x-forwarded-for');
-  if (forwarded) return forwarded.split(',')[0].trim();
+  if (forwarded) {
+    const ips = forwarded.split(',').map((s) => s.trim());
+    return ips[ips.length - 1] || 'unknown'; // 取最后一个（Vercel 追加的真实 IP）
+  }
   return req.headers.get('x-real-ip') ?? 'unknown';
 }
 
 function todayStart(): string {
-  // UTC 天起始，和 Supabase timestamptz 比较用
   return new Date(new Date().toISOString().slice(0, 10)).toISOString();
 }
 
@@ -74,7 +87,6 @@ function checkRateLimit(ip: string, route: string): { allowed: boolean; retryAft
   return { allowed: true, retryAfterSec: 0 };
 }
 
-// 清理过期频率条目
 let lastCleanup = 0;
 function cleanupRate() {
   const now = Date.now();
@@ -85,7 +97,17 @@ function cleanupRate() {
   }
 }
 
-// ---- 每日配额检查（异步，查 Supabase）----
+/**
+ * 管理操作认证：upload 和 documents DELETE 需要 ADMIN_TOKEN。
+ * 如果未配置 ADMIN_TOKEN，则禁止写操作（安全默认）。
+ */
+function checkAdminAuth(req: NextRequest): boolean {
+  if (!ADMIN_TOKEN) return false; // 未配置 token = 禁止写操作
+  const auth = req.headers.get('authorization');
+  return auth === `Bearer ${ADMIN_TOKEN}`;
+}
+
+// ---- 每日配额检查 ----
 async function checkDailyLimit(ip: string, route: string): Promise<{
   allowed: boolean;
   reason?: string;
@@ -93,11 +115,11 @@ async function checkDailyLimit(ip: string, route: string): Promise<{
   globalUsed?: number;
 }> {
   const db = getSupabase();
-  if (!db) return { allowed: true }; // Supabase 不可用时放行
+  // fail-closed：Supabase 不可用时拒绝请求，不放行
+  if (!db) return { allowed: false, reason: '服务暂时不可用，请稍后再试' };
 
   const today = todayStart();
 
-  // 并行查 IP 计数 + 全局计数
   const [ipRes, globalRes] = await Promise.all([
     (db as any)
       .from('usage_logs')
@@ -115,7 +137,6 @@ async function checkDailyLimit(ip: string, route: string): Promise<{
   const ipUsed = ipRes.count ?? 0;
   const globalUsed = globalRes.count ?? 0;
 
-  // 全局限流优先（预算保护）
   if (globalUsed >= DAILY_LIMIT_GLOBAL) {
     return {
       allowed: false,
@@ -125,7 +146,6 @@ async function checkDailyLimit(ip: string, route: string): Promise<{
     };
   }
 
-  // Per-IP 限流
   if (ipUsed >= DAILY_LIMIT_PER_IP) {
     return {
       allowed: false,
@@ -138,7 +158,6 @@ async function checkDailyLimit(ip: string, route: string): Promise<{
   return { allowed: true, ipUsed, globalUsed };
 }
 
-// ---- 记录一次使用 ----
 async function logUsage(ip: string, route: string) {
   const db = getSupabase();
   if (!db) return;
@@ -149,15 +168,33 @@ async function logUsage(ip: string, route: string) {
 export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
-  // 只对 chat 和 upload API 限流
   const isChat = pathname.startsWith('/api/chat');
   const isUpload = pathname.startsWith('/api/upload');
-  if (!isChat && !isUpload) return NextResponse.next();
+  const isDocuments = pathname.startsWith('/api/documents');
+  if (!isChat && !isUpload && !isDocuments) return NextResponse.next();
 
-  const route = isChat ? '/api/chat' : '/api/upload';
+  const route = isChat ? '/api/chat' : isUpload ? '/api/upload' : '/api/documents';
   const ip = getIP(req);
 
-  // 第 1 层：频率限流（内存，防 burst）
+  // 管理操作认证（upload POST 和 documents DELETE 需要 ADMIN_TOKEN）
+  if (isUpload && req.method === 'POST') {
+    if (!checkAdminAuth(req)) {
+      return NextResponse.json(
+        { error: '需要管理员授权才能上传文档' },
+        { status: 401 }
+      );
+    }
+  }
+  if (isDocuments && req.method === 'DELETE') {
+    if (!checkAdminAuth(req)) {
+      return NextResponse.json(
+        { error: '需要管理员授权才能删除文档' },
+        { status: 401 }
+      );
+    }
+  }
+
+  // 频率限流
   cleanupRate();
   const rate = checkRateLimit(ip, route);
   if (!rate.allowed) {
@@ -170,8 +207,8 @@ export async function proxy(req: NextRequest) {
     );
   }
 
-  // 第 2 层：每日配额限流（Supabase 持久化，防额度耗尽）
-  if (isChat) { // upload 不计每日配额（上传频率本身很低）
+  // 每日配额限流（仅 chat 计数）
+  if (isChat) {
     const daily = await checkDailyLimit(ip, route);
     if (!daily.allowed) {
       return NextResponse.json(
@@ -185,16 +222,14 @@ export async function proxy(req: NextRequest) {
         { status: 429 }
       );
     }
-    // 放行 + 异步记录使用（不阻塞响应）
     logUsage(ip, route);
   }
 
-  // 放行
   const res = NextResponse.next();
   res.headers.set('X-RateLimit-Route', route);
   return res;
 }
 
 export const config = {
-  matcher: ['/api/chat/:path*', '/api/upload/:path*'],
+  matcher: ['/api/chat/:path*', '/api/upload/:path*', '/api/documents/:path*'],
 };

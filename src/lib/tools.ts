@@ -75,10 +75,23 @@ export const webSearch = tool(
 );
 
 // ---------- Tool 3 · 计算器 ----------
+const MAX_EXPR_LENGTH = 200;
+// 只允许数字、运算符、括号、常见数学函数和常量
+const SAFE_EXPR_RE = /^[\d\s+\-*/().^,eEpsincotaglqrwb10]+$/;
+
 export const calculator = tool(
   async ({ expression }: { expression: string }) => {
     try {
+      if (expression.length > MAX_EXPR_LENGTH) {
+        return `表达式过长（上限 ${MAX_EXPR_LENGTH} 字符）`;
+      }
+      if (!SAFE_EXPR_RE.test(expression)) {
+        return '表达式包含不允许的字符';
+      }
       const result = evaluate(expression);
+      if (typeof result === 'number' && !isFinite(result)) {
+        return '计算结果溢出（Infinity/NaN）';
+      }
       return String(result);
     } catch (e) {
       return `计算错误：${(e as Error).message}`;

@@ -44,6 +44,19 @@ export async function POST(req: NextRequest) {
   if (!messages.length) {
     return Response.json({ error: 'messages cannot be empty' }, { status: 400 });
   }
+
+  // 输入校验：消息长度和数量限制
+  const MAX_MESSAGE_LENGTH = 4000;
+  const MAX_MESSAGES = 50;
+  if (messages.length > MAX_MESSAGES) {
+    return Response.json({ error: '历史消息过多，请清空会话' }, { status: 400 });
+  }
+  for (const m of messages) {
+    if (m.content.length > MAX_MESSAGE_LENGTH) {
+      return Response.json({ error: '消息过长，请缩短后重试' }, { status: 400 });
+    }
+  }
+
   const lastUser = messages[messages.length - 1];
   if (lastUser.role !== 'user') {
     return Response.json({ error: 'last message must be user' }, { status: 400 });

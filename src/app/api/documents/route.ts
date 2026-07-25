@@ -40,7 +40,8 @@ export async function GET() {
     return NextResponse.json({ documents });
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
-    return NextResponse.json({ error: msg }, { status: 500 });
+    console.error('[documents GET] error:', msg);
+    return NextResponse.json({ error: '获取文档列表失败' }, { status: 500 });
   }
 }
 
@@ -69,6 +70,7 @@ export async function DELETE(req: Request) {
     return NextResponse.json({ ok: true, deleted: count });
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
-    return NextResponse.json({ error: msg }, { status: 500 });
+    console.error('[documents DELETE] error:', msg);
+    return NextResponse.json({ error: '删除文档失败' }, { status: 500 });
   }
 }

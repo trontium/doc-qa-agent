@@ -30,6 +30,12 @@ export function SidebarContent({ onAction }: { onAction?: () => void }) {
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  /** 获取管理认证头（ADMIN_TOKEN 通过 NEXT_PUBLIC 传递给前端） */
+  function authHeaders(): HeadersInit {
+    const token = process.env.NEXT_PUBLIC_ADMIN_TOKEN;
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  }
+
   async function fetchDocs() {
     try {
       const res = await fetch('/api/documents');
@@ -53,7 +59,7 @@ export function SidebarContent({ onAction }: { onAction?: () => void }) {
     try {
       const fd = new FormData();
       fd.append('file', file);
-      const res = await fetch('/api/upload', { method: 'POST', body: fd });
+      const res = await fetch('/api/upload', { method: 'POST', body: fd, headers: authHeaders() });
       const data = await res.json();
       if (data.ok) {
         toast.success(`${file.name} 已入库 ${data.chunks} 段`, { id: tid });
@@ -76,6 +82,7 @@ export function SidebarContent({ onAction }: { onAction?: () => void }) {
     setDeleteTarget(null);
     const res = await fetch(`/api/documents?source=${encodeURIComponent(source)}`, {
       method: 'DELETE',
+      headers: authHeaders(),
     });
     const data = await res.json();
     if (data.ok) {

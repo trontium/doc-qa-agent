@@ -61,11 +61,15 @@ function ChatMessageComp({ message }: { message: Message }) {
 
   const markdownComponents = useMemo(
     () => ({
-      a: ({ href, children }: { href?: string; children?: ReactNode }) => (
-        <a href={href} target="_blank" rel="noreferrer" className="underline">
-          {children}
-        </a>
-      ),
+      a: ({ href, children }: { href?: string; children?: ReactNode }) => {
+        // 只允许 http/https 协议链接，防止 javascript: XSS
+        const safeHref = href && href.startsWith('http') ? href : undefined;
+        return (
+          <a href={safeHref} target="_blank" rel="noreferrer" className="underline">
+            {children}
+          </a>
+        );
+      },
       // 拦截文本节点渲染，把 [n] 转成可点击按钮
       p: ({ children }: { children?: ReactNode }) => {
         const CitationText = makeCitationRenderer(handleCite);

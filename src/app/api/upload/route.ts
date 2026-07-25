@@ -136,6 +136,7 @@ export async function POST(req: NextRequest) {
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     console.error('[upload] error:', msg);
-    return NextResponse.json({ error: msg }, { status: 500 });
+    // 不向客户端泄露内部错误详情
+    return NextResponse.json({ error: '文件处理失败，请稍后重试' }, { status: 500 });
   }
 }
