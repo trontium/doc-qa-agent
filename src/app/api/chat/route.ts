@@ -19,7 +19,11 @@ import type { NextRequest } from 'next/server';
 import { HumanMessage, AIMessage, AIMessageChunk } from '@langchain/core/messages';
 import { agent, getAgent, getPipelineGenerator } from '@/lib/agent';
 import { retrieve } from '@/lib/retriever';
+import { validateEnv } from '@/lib/env';
 import type { Citation } from '@/types/message';
+
+// 启动时校验环境变量
+validateEnv();
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;

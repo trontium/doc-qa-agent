@@ -14,6 +14,7 @@ interface DocumentItem {
 export function DocumentSidebar() {
   const [docs, setDocs] = useState<DocumentItem[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [status, setStatus] = useState<string>('');
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -22,7 +23,10 @@ export function DocumentSidebar() {
       const res = await fetch('/api/documents');
       const data = await res.json();
       if (data.documents) setDocs(data.documents);
-    } catch {}
+    } catch {
+    } finally {
+      setLoading(false);
+    }
   }
 
   useEffect(() => {
@@ -112,7 +116,10 @@ export function DocumentSidebar() {
           已入库 {docs.length} 个文档
         </div>
         <div className="space-y-2">
-          {docs.length === 0 && (
+          {loading && Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="h-14 w-full bg-gray-100 rounded animate-pulse" />
+          ))}
+          {!loading && docs.length === 0 && (
             <p className="text-xs text-gray-400 text-center py-6">还没有上传文档</p>
           )}
           {docs.map((d) => (

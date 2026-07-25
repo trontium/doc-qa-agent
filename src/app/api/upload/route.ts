@@ -7,6 +7,9 @@ import { supabase } from '@/lib/supabase';
 export const runtime = 'nodejs';
 export const maxDuration = 60;
 
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const MAX_TOTAL_DOCS = 50;
+
 async function parseFile(file: File): Promise<string> {
   const buf = Buffer.from(await file.arrayBuffer());
   const name = file.name.toLowerCase();
@@ -50,6 +53,23 @@ export async function POST(req: NextRequest) {
     const form = await req.formData();
     const file = form.get('file') as File | null;
     if (!file) return NextResponse.json({ error: 'no file' }, { status: 400 });
+
+    // 文件大小限制
+    if (file.size > MAX_FILE_SIZE) {
+      return NextResponse.json({
+        error: `文件过大（${(file.size / 1024 / 1024).toFixed(1)}MB），上限 5MB。建议拆分或压缩后重新上传`,
+      }, { status: 413 });
+    }
+
+    // 文档总数限制
+    const { count } = await supabase
+      .from('documents')
+      .select('id', { count: 'exact', head: true });
+    if ((count ?? 0) >= MAX_TOTAL_DOCS) {
+      return NextResponse.json({
+        error: `知识库已满（${MAX_TOTAL_DOCS} 个文档上限），请先删除旧文档再上传`,
+      }, { status: 413 });
+    }
 
     // 1. 解析文件为纯文本
     const text = await parseFile(file);
