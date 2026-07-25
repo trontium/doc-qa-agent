@@ -53,7 +53,7 @@ export default function Home() {
           <div>
             <h1 className="text-2xl font-bold">智能文档问答 Agent</h1>
             <p className="text-sm text-gray-500">
-              RAG + Hybrid Search + SSE 流式 · Day 3
+              RAG + Hybrid Search + SSE 流式 · 每日体验 5 次
             </p>
           </div>
           {messages.length > 0 && (

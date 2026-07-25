@@ -83,6 +83,15 @@ export function useChat() {
         });
 
         if (!res.ok || !res.body) {
+          // 429 = 每日限额用完，给友好提示
+          if (res.status === 429) {
+            try {
+              const errBody = await res.json();
+              throw new Error(errBody.error || '请求过于频繁');
+            } catch (parseErr) {
+              throw parseErr instanceof Error ? parseErr : new Error(`HTTP 429`);
+            }
+          }
           throw new Error(`HTTP ${res.status}`);
         }
 
@@ -177,6 +186,8 @@ export function useChat() {
         flush();
         store.getState().updateLast({
           status: aborted ? 'aborted' : 'error',
+          // 把限流等错误信息展示给用户
+          ...(aborted ? {} : { content: e instanceof Error ? e.message : '未知错误' }),
         });
       } finally {
         setStatus('idle');

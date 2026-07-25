@@ -56,7 +56,22 @@ as $$
 $$;
 
 -- =====================================================
--- 7. RPC · 关键词检索（BM25/ts_rank）
+-- 8. 用量统计表（限流 + 预算保护）
+-- =====================================================
+create table if not exists usage_logs (
+  id bigserial primary key,
+  ip text not null,
+  route text not null,
+  created_at timestamptz default now()
+);
+
+-- 按天+IP 查询次数的索引（限流查询用）
+create index if not exists usage_logs_daily_idx
+  on usage_logs (route, ip, created_at);
+
+-- 自动清理 7 天前的日志（保持表小）
+-- 需在 Supabase → Database → Cron 里配 pg_cron 每天跑：
+-- SELECT count(*) FROM usage_logs WHERE created_at < now() - interval '7 days';
 -- =====================================================
 create or replace function keyword_docs(
   query text,
