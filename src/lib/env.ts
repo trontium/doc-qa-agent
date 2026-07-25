@@ -53,5 +53,4 @@ export function ensureEnv() {
   }
 
   validated = true;
-  console.log('[env] 环境变量校验通过');
 }

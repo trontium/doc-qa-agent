@@ -184,10 +184,31 @@ export function useChat() {
           rafRef.current = null;
         }
         flush();
+        // 中文友好错误提示
+        let errMsg = '未知错误';
+        if (aborted) {
+          // aborted 不需要 content
+        } else if (e instanceof Error) {
+          if (e.message === 'Failed to fetch') {
+            errMsg = '网络连接失败，请检查网络后重试';
+          } else if (e.message.startsWith('HTTP ')) {
+            const code = e.message.replace('HTTP ', '');
+            const codeMap: Record<string, string> = {
+              '400': '请求格式有误',
+              '401': '未授权，请输入管理密码',
+              '429': '请求过于频繁，请稍后再试',
+              '500': '服务内部错误，请稍后重试',
+              '502': '服务暂时不可用，请稍后再试',
+              '503': '服务暂时不可用，请稍后再试',
+            };
+            errMsg = codeMap[code] || `请求失败（${code}）`;
+          } else {
+            errMsg = e.message; // 限流中文提示等直接透传
+          }
+        }
         store.getState().updateLast({
           status: aborted ? 'aborted' : 'error',
-          // 把限流等错误信息展示给用户
-          ...(aborted ? {} : { content: e instanceof Error ? e.message : '未知错误' }),
+          ...(aborted ? {} : { content: errMsg }),
         });
       } finally {
         setStatus('idle');

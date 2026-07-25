@@ -64,14 +64,26 @@ server.tool(
   }
 );
 
-// Tool 3: 计算器
+// Tool 3: 计算器（与 tools.ts 同级安全校验）
+const MAX_EXPR_LENGTH = 200;
+const SAFE_EXPR_RE = /^[\d\s+\-*/().^,eEpsincotaglqrwb10]+$/;
+
 server.tool(
   'calculator',
   '执行数学运算，支持四则运算/开方/幂运算/三角函数等。示例：(3+4)*5、sqrt(144)、sin(pi/2)。',
   { expression: z.string().describe('数学表达式') },
   async ({ expression }) => {
     try {
+      if (expression.length > MAX_EXPR_LENGTH) {
+        return { content: [{ type: 'text' as const, text: `表达式过长（上限 ${MAX_EXPR_LENGTH} 字符）` }] };
+      }
+      if (!SAFE_EXPR_RE.test(expression)) {
+        return { content: [{ type: 'text' as const, text: '表达式包含不允许的字符' }] };
+      }
       const result = evaluate(expression);
+      if (typeof result === 'number' && !isFinite(result)) {
+        return { content: [{ type: 'text' as const, text: '计算结果溢出（Infinity/NaN）' }] };
+      }
       return { content: [{ type: 'text' as const, text: String(result) }] };
     } catch (e) {
       return { content: [{ type: 'text' as const, text: `计算错误：${(e as Error).message}` }] };
