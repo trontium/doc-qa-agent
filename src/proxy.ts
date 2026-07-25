@@ -1,5 +1,5 @@
 /**
- * Usage-limit middleware — 每日用量配额保护
+ * Usage-limit proxy — 每日用量配额保护
  *
  * 两层防线：
  *   1. Per-IP daily cap  — 每人每天最多 N 次查询（防止一人用完所有额度）
@@ -32,7 +32,7 @@ const RATE_RULES: Record<string, { limit: number; windowMs: number }> = {
 // ---- Supabase（用量持久化）----
 const supabaseUrl = process.env.SUPABASE_URL ?? '';
 const supabaseKey = process.env.SUPABASE_SERVICE_KEY ?? '';
-// 懒初始化：middleware 运行在 Edge，不能在模块顶层 createClient（env 还没注入）
+// 懒初始化：proxy 运行在 Edge，不能在模块顶层 createClient（env 还没注入）
 let _supabase: ReturnType<typeof createClient> | null = null;
 function getSupabase() {
   if (!_supabase && supabaseUrl && supabaseKey) {
@@ -145,8 +145,8 @@ async function logUsage(ip: string, route: string) {
   await (db as any).from('usage_logs').insert({ ip, route });
 }
 
-// ---- 主 middleware ----
-export async function middleware(req: NextRequest) {
+// ---- 主 proxy ----
+export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
   // 只对 chat 和 upload API 限流

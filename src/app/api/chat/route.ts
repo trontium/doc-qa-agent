@@ -19,11 +19,8 @@ import type { NextRequest } from 'next/server';
 import { HumanMessage, AIMessage, AIMessageChunk } from '@langchain/core/messages';
 import { agent, getAgent, getPipelineGenerator } from '@/lib/agent';
 import { retrieve } from '@/lib/retriever';
-import { validateEnv } from '@/lib/env';
+import { ensureEnv } from '@/lib/env';
 import type { Citation } from '@/types/message';
-
-// 启动时校验环境变量
-validateEnv();
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
@@ -34,6 +31,9 @@ interface ChatPayload {
 }
 
 export async function POST(req: NextRequest) {
+  // 惰性校验环境变量（构建时不执行，第一次请求时才检查）
+  ensureEnv();
+
   let payload: ChatPayload;
   try {
     payload = (await req.json()) as ChatPayload;
