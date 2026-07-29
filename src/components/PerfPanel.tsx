@@ -49,6 +49,7 @@ export function PerfPanel() {
   const current = usePerfStore((s) => s.current);
   const last = usePerfStore((s) => s.last);
   const vitals = usePerfStore((s) => s.vitals);
+  const hljs = usePerfStore((s) => s.hljs);
 
   useEffect(() => {
     initWebVitals();
@@ -136,6 +137,19 @@ export function PerfPanel() {
               <div className="text-[9px] text-gray-400 mt-1 font-sans">
                 (chunks − flush) / chunks · rAF 批量合并 token 有效性
               </div>
+            </div>
+          </section>
+
+          {/* hljs Web Worker */}
+          <section className="pt-1 border-t border-gray-100">
+            <div className="text-[10px] font-sans text-gray-400 mb-1.5 tracking-wide">
+              HLJS WORKER · 主线程 0 阻塞
+            </div>
+            <div className="grid grid-cols-2 gap-x-3 gap-y-1.5">
+              <Metric label="任务数" value={fmt(hljs.taskCount)} />
+              <Metric label="缓存命中" value={fmt(hljs.cacheHits)} />
+              <Metric label="Worker 总耗时" value={fmt(Math.round(hljs.totalMs), 'ms')} />
+              <Metric label="单次最大" value={fmt(Math.round(hljs.maxMs), 'ms')} />
             </div>
           </section>
 

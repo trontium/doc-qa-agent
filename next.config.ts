@@ -11,7 +11,8 @@ const securityHeaders = [
     key: 'Content-Security-Policy',
     value: [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-eval' 'unsafe-inline'",
+      "script-src 'self' 'unsafe-eval' 'unsafe-inline' blob:",
+      "worker-src 'self' blob:",
       "style-src 'self' 'unsafe-inline'",
       "connect-src 'self' https://*.supabase.co https://api.tavily.com https://api.siliconflow.cn https://api.deepseek.com https://open.bigmodel.cn https://api.smith.langchain.com",
       "img-src 'self' data: blob:",

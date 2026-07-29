@@ -2,8 +2,8 @@
 import { memo, useEffect, useMemo } from 'react';
 import ReactMarkdown, { type Components } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import rehypeHighlight from 'rehype-highlight';
 import { usePerfStore } from '@/store/perfStore';
+import { AsyncCodeBlock } from './AsyncCodeBlock';
 
 /**
  * StreamingMarkdown · 流式 Markdown 增量渲染
@@ -29,8 +29,9 @@ import { usePerfStore } from '@/store/perfStore';
  */
 
 const REMARK_PLUGINS = [remarkGfm];
-const REHYPE_PLUGINS_WITH_HL = [rehypeHighlight];
-const REHYPE_PLUGINS_NO_HL: [] = [];
+// 语法高亮改由 AsyncCodeBlock 通过 Web Worker 完成 → 不再在此挂 rehype-highlight
+// 保留延迟高亮策略：流式中若尾部有未闭合 fence，跳过整段代码块的 Worker 高亮
+const REHYPE_PLUGINS_EMPTY: [] = [];
 
 /**
  * 把 markdown 切成稳定块 + 尾部动态块
@@ -87,15 +88,37 @@ interface StreamingMarkdownProps {
 }
 
 /**
+ * 合并外部 components 与 AsyncCodeBlock（Web Worker 高亮）
+ */
+function withAsyncCode(components?: Components, disableHighlight = false): Components {
+  return {
+    ...components,
+    code: (props) => {
+      const { className, children } = props;
+      // 流式中的尾部块有未闭合 fence → 直接渲染纯文本 <code>（不走 Worker）
+      if (disableHighlight) {
+        return <code className={className}>{children}</code>;
+      }
+      return (
+        <AsyncCodeBlock className={className}>
+          {children}
+        </AsyncCodeBlock>
+      );
+    },
+  };
+}
+
+/**
  * 单个稳定块 · memo 到 text 相等即跳过
  */
 const StableBlock = memo(
   function StableBlock({ text, components }: { text: string; components?: Components }) {
+    const mergedComps = useMemo(() => withAsyncCode(components, false), [components]);
     return (
       <ReactMarkdown
         remarkPlugins={REMARK_PLUGINS}
-        rehypePlugins={REHYPE_PLUGINS_WITH_HL}
-        components={components}
+        rehypePlugins={REHYPE_PLUGINS_EMPTY}
+        components={mergedComps}
       >
         {text}
       </ReactMarkdown>
@@ -105,7 +128,8 @@ const StableBlock = memo(
 );
 
 /**
- * 尾部块 · 每次 chunk 变化都 re-parse，但根据是否有未闭合围栏动态挂 rehype-highlight
+ * 尾部块 · 每次 chunk 变化都 re-parse
+ * 有未闭合围栏时，禁用代码块高亮（延迟到围栏闭合）
  */
 function TailBlock({
   text,
@@ -117,13 +141,13 @@ function TailBlock({
   components?: Components;
 }) {
   const hasOpenFence = useMemo(() => hasUnclosedFence(text), [text]);
-  // 流式期间遇到未闭合 fence → 跳过 hljs（延迟高亮）
-  const rehypes = isStreaming && hasOpenFence ? REHYPE_PLUGINS_NO_HL : REHYPE_PLUGINS_WITH_HL;
+  const disableHl = isStreaming && hasOpenFence;
+  const mergedComps = useMemo(() => withAsyncCode(components, disableHl), [components, disableHl]);
   return (
     <ReactMarkdown
       remarkPlugins={REMARK_PLUGINS}
-      rehypePlugins={rehypes}
-      components={components}
+      rehypePlugins={REHYPE_PLUGINS_EMPTY}
+      components={mergedComps}
     >
       {text}
     </ReactMarkdown>

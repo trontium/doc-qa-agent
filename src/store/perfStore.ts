@@ -33,6 +33,17 @@ export interface StreamStats {
   stableBlocks: number;
 }
 
+export interface HljsStats {
+  /** Web Worker 高亮任务总数（Worker 收到 postMessage 的次数） */
+  taskCount: number;
+  /** Worker 高亮总耗时（ms）· 主线程实际阻塞 0 */
+  totalMs: number;
+  /** 单次最大耗时 */
+  maxMs: number;
+  /** 缓存命中数（同代码块重复高亮走 LRU） */
+  cacheHits: number;
+}
+
 export interface WebVitals {
   fcp: number | null; // First Contentful Paint
   lcp: number | null; // Largest Contentful Paint
@@ -43,6 +54,7 @@ interface PerfState {
   current: StreamStats;
   last: StreamStats | null;
   vitals: WebVitals;
+  hljs: HljsStats;
 
   // Stream lifecycle
   streamStart: () => void;
@@ -54,6 +66,10 @@ interface PerfState {
 
   // Web Vitals
   setVital: (k: keyof WebVitals, v: number) => void;
+
+  // hljs Worker
+  recordHljsTask: (ms: number) => void;
+  recordHljsCacheHit: () => void;
 }
 
 const initialStats: StreamStats = {
@@ -74,6 +90,7 @@ export const usePerfStore = create<PerfState>((set) => ({
   current: initialStats,
   last: null,
   vitals: { fcp: null, lcp: null, inp: null },
+  hljs: { taskCount: 0, totalMs: 0, maxMs: 0, cacheHits: 0 },
 
   streamStart: () => {
     streamStartAt = performance.now();
@@ -140,5 +157,22 @@ export const usePerfStore = create<PerfState>((set) => ({
 
   setVital: (k, v) => {
     set((s) => ({ vitals: { ...s.vitals, [k]: Math.round(v) } }));
+  },
+
+  recordHljsTask: (ms) => {
+    set((s) => ({
+      hljs: {
+        ...s.hljs,
+        taskCount: s.hljs.taskCount + 1,
+        totalMs: s.hljs.totalMs + ms,
+        maxMs: Math.max(s.hljs.maxMs, ms),
+      },
+    }));
+  },
+
+  recordHljsCacheHit: () => {
+    set((s) => ({
+      hljs: { ...s.hljs, cacheHits: s.hljs.cacheHits + 1 },
+    }));
   },
 }));
