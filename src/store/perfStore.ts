@@ -29,6 +29,8 @@ export interface StreamStats {
   batchHitRate: number | null;
   /** 当前是否正在生成 */
   isStreaming: boolean;
+  /** 稳定块数（增量 Markdown 解析：已凝固不再重 parse 的段落数） */
+  stableBlocks: number;
 }
 
 export interface WebVitals {
@@ -47,6 +49,7 @@ interface PerfState {
   markFirstByte: () => void;
   addChunk: (chars: number) => void;
   addFlush: () => void;
+  setStableBlocks: (n: number) => void;
   streamEnd: () => void;
 
   // Web Vitals
@@ -62,6 +65,7 @@ const initialStats: StreamStats = {
   charsPerSec: null,
   batchHitRate: null,
   isStreaming: false,
+  stableBlocks: 0,
 };
 
 let streamStartAt = 0;
@@ -102,6 +106,14 @@ export const usePerfStore = create<PerfState>((set) => ({
     set((s) => ({
       current: { ...s.current, flushCount: s.current.flushCount + 1 },
     }));
+  },
+
+  setStableBlocks: (n: number) => {
+    set((s) => {
+      // 只在增大时更新（本次流式的最大稳定块数即最终值）
+      if (n <= s.current.stableBlocks) return s;
+      return { current: { ...s.current, stableBlocks: n } };
+    });
   },
 
   streamEnd: () => {

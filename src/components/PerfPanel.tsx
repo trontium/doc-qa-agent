@@ -117,6 +117,8 @@ export function PerfPanel() {
               <Metric label="字符数" value={fmt(view.charCount)} />
               <Metric label="SSE chunks" value={fmt(view.chunkCount)} />
               <Metric label="rAF flush" value={fmt(view.flushCount)} />
+              <Metric label="MD 稳定块" value={fmt(view.stableBlocks)} />
+              <Metric label="" value="" />
             </div>
             <div className="mt-2 rounded-lg bg-gradient-to-r from-blue-50 to-violet-50 px-2.5 py-1.5 border border-blue-100/50">
               <div className="flex items-center justify-between">
@@ -167,6 +169,8 @@ function Metric({
   value: string;
   colorClass?: string;
 }) {
+  // 空 label 保留占位以维持 grid 对齐
+  if (!label) return <div />;
   return (
     <div className="flex items-center justify-between">
       <span className="text-gray-400 font-sans text-[10px]">{label}</span>

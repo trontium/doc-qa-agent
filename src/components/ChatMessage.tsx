@@ -1,15 +1,9 @@
 'use client';
 import { memo, useCallback, useMemo, useRef, useState, type ReactNode } from 'react';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
-import rehypeHighlight from 'rehype-highlight';
 import 'highlight.js/styles/github.css';
 import type { Message } from '@/types/message';
 import { ToolCallDetail } from './ToolCallDetail';
-
-// 组件外定义避免每次新引用破坏 memo（原简历宝典 §9.2 优化点）
-const REMARK_PLUGINS = [remarkGfm];
-const REHYPE_PLUGINS = [rehypeHighlight];
+import { StreamingMarkdown } from './StreamingMarkdown';
 
 /**
  * 把 Markdown text 里出现的 [n] 转成可点击的高亮引用标记
@@ -157,13 +151,11 @@ function ChatMessageComp({ message }: { message: Message }) {
           <div className="whitespace-pre-wrap break-words">{message.content}</div>
         ) : (
           <div className="prose prose-sm max-w-none break-words prose-p:my-2 prose-pre:my-2 prose-code:before:content-none prose-code:after:content-none">
-            <ReactMarkdown
-              remarkPlugins={REMARK_PLUGINS}
-              rehypePlugins={REHYPE_PLUGINS}
+            <StreamingMarkdown
+              content={message.content || (isStreaming ? '⏳ 思考中…' : '')}
+              isStreaming={isStreaming}
               components={markdownComponents}
-            >
-              {message.content || (isStreaming ? '⏳ 思考中…' : '')}
-            </ReactMarkdown>
+            />
           </div>
         )}
 
