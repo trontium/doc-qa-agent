@@ -1,6 +1,6 @@
 'use client';
 import { memo, useCallback, useMemo, useRef, useState, type ReactNode } from 'react';
-import 'highlight.js/styles/github.css';
+// 通过 globals.css 的 .hljs 变量切换主题，无需直接 import hljs css
 import type { Message } from '@/types/message';
 import { ToolCallDetail } from './ToolCallDetail';
 import { StreamingMarkdown } from './StreamingMarkdown';
@@ -110,11 +110,11 @@ function ChatMessageComp({ message }: { message: Message }) {
       <div
         className={`max-w-[85%] rounded-2xl px-4 py-3 ${
           isUser
-            ? 'bg-gradient-to-br from-blue-500 to-violet-500 text-white shadow-sm shadow-blue-200'
-            : 'bg-white border border-gray-200/80 shadow-sm'
+            ? 'bg-gradient-to-br from-blue-500 to-violet-500 text-white shadow-sm shadow-blue-200 dark:shadow-blue-900/40'
+            : 'bg-card border border-border shadow-sm'
         }`}
       >
-        <div className={`text-xs mb-1 ${isUser ? 'text-white/70' : 'text-gray-400'}`}>
+        <div className={`text-xs mb-1 ${isUser ? 'text-white/70' : 'text-muted-foreground'}`}>
           {isUser ? '你' : '🤖 Assistant'}
           {isStreaming && (
             <span className="ml-2 inline-block w-1.5 h-1.5 rounded-full bg-current animate-pulse" />
@@ -123,7 +123,7 @@ function ChatMessageComp({ message }: { message: Message }) {
 
         {/* 阶段指示器：检索中 / 生成中 */}
         {!isUser && isStreaming && message.stage && !message.content && (
-          <div className="flex items-center gap-1.5 text-xs text-gray-500 mb-2">
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-2">
             {message.stage === 'retrieving' ? (
               <>
                 <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
@@ -150,7 +150,7 @@ function ChatMessageComp({ message }: { message: Message }) {
         {isUser ? (
           <div className="whitespace-pre-wrap break-words">{message.content}</div>
         ) : (
-          <div className="prose prose-sm max-w-none break-words prose-p:my-2 prose-pre:my-2 prose-code:before:content-none prose-code:after:content-none">
+          <div className="prose prose-sm max-w-none break-words prose-p:my-2 prose-pre:my-2 prose-code:before:content-none prose-code:after:content-none dark:prose-invert">
             <StreamingMarkdown
               content={message.content || (isStreaming ? '⏳ 思考中…' : '')}
               isStreaming={isStreaming}
@@ -160,16 +160,16 @@ function ChatMessageComp({ message }: { message: Message }) {
         )}
 
         {message.status === 'aborted' && (
-          <div className="mt-2 text-xs text-orange-600">⚠ 已停止</div>
+          <div className="mt-2 text-xs text-orange-600 dark:text-orange-400">⚠ 已停止</div>
         )}
         {message.status === 'error' && (
-          <div className="mt-2 text-xs text-red-600">⚠ 出错，请重试</div>
+          <div className="mt-2 text-xs text-red-600 dark:text-red-400">⚠ 出错，请重试</div>
         )}
 
         {/* 引用卡片列表（点击 [n] 会滚动到对应卡片并高亮 1.5s） */}
         {!isUser && message.citations && message.citations.length > 0 && (
-          <div className="mt-3 pt-3 border-t border-gray-100 space-y-1.5">
-            <div className="text-xs text-gray-400 font-semibold">
+          <div className="mt-3 pt-3 border-t border-border space-y-1.5">
+            <div className="text-xs text-muted-foreground font-semibold">
               📎 引用（{message.citations.length}）· 点击 [n] 定位
             </div>
             {message.citations.map((c) => {
@@ -182,14 +182,14 @@ function ChatMessageComp({ message }: { message: Message }) {
                   }}
                   className={`text-xs rounded-lg p-2 border-l-2 transition-all duration-300 ${
                     isHighlighted
-                      ? 'bg-amber-50 border-amber-400 shadow-md scale-[1.02]'
-                      : 'bg-gray-50/80 border-blue-400'
+                      ? 'bg-amber-50 dark:bg-amber-950/30 border-amber-400 shadow-md scale-[1.02]'
+                      : 'bg-muted/50 border-blue-400'
                   }`}
                 >
-                  <div className="font-medium text-gray-700 mb-0.5">
+                  <div className="font-medium text-foreground mb-0.5">
                     [{c.index}] {c.source ?? '未知来源'}
                   </div>
-                  <div className={`text-gray-600 ${isHighlighted ? '' : 'line-clamp-3'}`}>
+                  <div className={`text-muted-foreground ${isHighlighted ? '' : 'line-clamp-3'}`}>
                     {c.content}
                   </div>
                 </div>

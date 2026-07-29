@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { DocumentSidebar, MobileSidebarButton, MobileSidebar } from '@/components/DocumentSidebar';
 import { ChatMessage } from '@/components/ChatMessage';
 import { PerfPanel } from '@/components/PerfPanel';
+import { ThemeToggle } from '@/components/ThemeToggle';
 import { Square, Send, Sparkles, Search, FileSearch, Zap, BookOpen, MessageSquare } from 'lucide-react';
 
 const SUGGESTIONS = [
@@ -61,7 +62,7 @@ export default function Home() {
   }
 
   return (
-    <div className="flex h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30">
+    <div className="flex h-screen bg-gradient-to-br from-[var(--gradient-bg-from)] via-[var(--gradient-bg-via)] to-[var(--gradient-bg-to)]">
       {/* 桌面端侧边栏 */}
       <DocumentSidebar />
 
@@ -73,19 +74,22 @@ export default function Home() {
           <div className="flex items-center gap-2.5">
             <MobileSidebarButton onClick={() => setSidebarOpen(true)} />
             <div>
-              <h1 className="text-xl md:text-2xl font-bold bg-gradient-to-r from-blue-600 via-violet-600 to-purple-600 bg-clip-text text-transparent">
+              <h1 className="text-xl md:text-2xl font-bold bg-gradient-to-r from-blue-600 via-violet-600 to-purple-600 dark:from-blue-400 dark:via-violet-400 dark:to-purple-400 bg-clip-text text-transparent">
                 DocQA Agent
               </h1>
-              <p className="text-xs md:text-sm text-gray-400 mt-0.5">
+              <p className="text-xs md:text-sm text-muted-foreground mt-0.5">
                 智能文档问答 · RAG + Hybrid Search + SSE
               </p>
             </div>
           </div>
-          {messages.length > 0 && (
-            <Button variant="outline" size="sm" onClick={clear} className="text-xs">
-              清空会话
-            </Button>
-          )}
+          <div className="flex items-center gap-2">
+            {messages.length > 0 && (
+              <Button variant="outline" size="sm" onClick={clear} className="text-xs">
+                清空会话
+              </Button>
+            )}
+            <ThemeToggle />
+          </div>
         </header>
 
         <div
@@ -93,26 +97,26 @@ export default function Home() {
           className={`flex-1 overflow-y-auto space-y-4 mb-4 rounded-2xl p-3 md:p-4 ${
             messages.length === 0
               ? 'bg-transparent border-none'
-              : 'bg-white/80 backdrop-blur-sm border border-gray-200/60 shadow-sm'
+              : 'bg-card/80 backdrop-blur-sm border border-border shadow-sm'
           }`}
         >
           {messages.length === 0 && (
             <div className="flex flex-col items-center justify-center py-8 md:py-14 space-y-6">
               {/* Logo / Hero */}
               <div className="relative">
-                <div className="w-20 h-20 md:w-24 md:h-24 rounded-3xl bg-gradient-to-br from-blue-500 via-violet-500 to-purple-600 flex items-center justify-center shadow-lg shadow-violet-200">
+                <div className="w-20 h-20 md:w-24 md:h-24 rounded-3xl bg-gradient-to-br from-blue-500 via-violet-500 to-purple-600 flex items-center justify-center shadow-lg shadow-violet-200 dark:shadow-violet-900/40">
                   <Sparkles className="w-10 h-10 md:w-12 md:h-12 text-white" />
                 </div>
-                <div className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-white shadow-md flex items-center justify-center">
+                <div className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-card shadow-md flex items-center justify-center">
                   <MessageSquare className="w-4 h-4 text-blue-500" />
                 </div>
               </div>
 
               <div className="text-center space-y-1.5">
-                <h2 className="text-lg md:text-xl font-semibold text-gray-800">
+                <h2 className="text-lg md:text-xl font-semibold text-foreground">
                   上传文档，开始提问
                 </h2>
-                <p className="text-sm text-gray-400 max-w-md">
+                <p className="text-sm text-muted-foreground max-w-md">
                   支持 PDF / Word / Markdown / TXT，Agent 将从文档中检索并生成回答
                 </p>
               </div>
@@ -122,26 +126,26 @@ export default function Home() {
                 {FEATURES.map(({ icon: Icon, label, desc, color }) => (
                   <div
                     key={label}
-                    className="rounded-xl border border-gray-200/80 bg-white/60 backdrop-blur-sm p-3 text-center hover:shadow-md hover:-translate-y-0.5 transition-all duration-200"
+                    className="rounded-xl border border-border bg-card/60 backdrop-blur-sm p-3 text-center hover:shadow-md hover:-translate-y-0.5 transition-all duration-200"
                   >
                     <div className={`w-8 h-8 mx-auto mb-2 rounded-lg bg-gradient-to-br ${color} flex items-center justify-center`}>
                       <Icon className="w-4 h-4 text-white" />
                     </div>
-                    <div className="text-xs font-semibold text-gray-700">{label}</div>
-                    <div className="text-[10px] text-gray-400 mt-0.5">{desc}</div>
+                    <div className="text-xs font-semibold text-foreground">{label}</div>
+                    <div className="text-[10px] text-muted-foreground mt-0.5">{desc}</div>
                   </div>
                 ))}
               </div>
 
               {/* Suggested Questions */}
               <div className="w-full max-w-md space-y-2">
-                <p className="text-xs font-medium text-gray-400 text-center">试试这些问题</p>
+                <p className="text-xs font-medium text-muted-foreground text-center">试试这些问题</p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                   {SUGGESTIONS.map((q) => (
                     <button
                       key={q}
                       onClick={() => submit(q)}
-                      className="text-left text-sm rounded-xl border border-gray-200/80 bg-white/50 hover:bg-blue-50/60 hover:border-blue-200 px-3.5 py-2.5 text-gray-600 hover:text-blue-700 transition-all duration-150 group"
+                      className="text-left text-sm rounded-xl border border-border bg-card/50 hover:bg-blue-50/60 dark:hover:bg-blue-950/30 hover:border-blue-200 dark:hover:border-blue-800 px-3.5 py-2.5 text-muted-foreground hover:text-blue-700 dark:hover:text-blue-300 transition-all duration-150 group"
                     >
                       <span className="text-blue-400 group-hover:text-blue-500 mr-1.5">→</span>
                       {q}
@@ -159,8 +163,8 @@ export default function Home() {
 
         {/* Input Area */}
         <div className="relative group">
-          <div className="absolute -inset-0.5 rounded-2xl bg-gradient-to-r from-blue-200 via-violet-200 to-purple-200 opacity-0 group-focus-within:opacity-100 transition-opacity duration-300 blur-sm" />
-          <div className="relative flex gap-2 items-end rounded-2xl bg-white border border-gray-200 p-2 shadow-sm">
+          <div className="absolute -inset-0.5 rounded-2xl bg-gradient-to-r from-blue-200 via-violet-200 to-purple-200 dark:from-blue-900/40 dark:via-violet-900/40 dark:to-purple-900/40 opacity-0 group-focus-within:opacity-100 transition-opacity duration-300 blur-sm" />
+          <div className="relative flex gap-2 items-end rounded-2xl bg-card border border-border p-2 shadow-sm">
             <Textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
@@ -194,7 +198,7 @@ export default function Home() {
         </div>
 
         {/* Footer */}
-        <div className="mt-2 flex items-center justify-center gap-3 text-[10px] text-gray-300">
+        <div className="mt-2 flex items-center justify-center gap-3 text-[10px] text-muted-foreground/60">
           <span>Built by 朱思麒</span>
           <span>·</span>
           <span>哈工深 23 级计算机</span>

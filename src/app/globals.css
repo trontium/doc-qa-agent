@@ -1,28 +1,100 @@
 @import "tailwindcss";
 
+/* Tailwind 4: class-based dark mode（配合 next-themes attribute="class"） */
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
+
+  /* 语义化设计 token */
+  --card: #ffffff;
+  --card-foreground: #171717;
+  --muted: #f4f4f5;
+  --muted-foreground: #71717a;
+  --border: #e4e4e7;
+  --input: #e4e4e7;
+  --ring: #a78bfa;
+  --primary: #6366f1;
+  --primary-foreground: #ffffff;
+  --secondary: #f4f4f5;
+  --secondary-foreground: #18181b;
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+
+  /* 业务场景色 */
+  --bubble-user: #6366f1;
+  --bubble-user-fg: #ffffff;
+  --bubble-bot: #ffffff;
+  --bubble-bot-fg: #171717;
+  --bubble-bot-border: #e4e4e7;
+
+  --gradient-bg-from: #f8fafc;
+  --gradient-bg-via: #ffffff;
+  --gradient-bg-to: #eff6ff;
+}
+
+.dark {
+  --background: #0a0a0b;
+  --foreground: #ededed;
+
+  --card: #161618;
+  --card-foreground: #ededed;
+  --muted: #1f1f23;
+  --muted-foreground: #a1a1aa;
+  --border: #27272a;
+  --input: #27272a;
+  --ring: #8b5cf6;
+  --primary: #818cf8;
+  --primary-foreground: #0a0a0b;
+  --secondary: #27272a;
+  --secondary-foreground: #fafafa;
+  --destructive: #f87171;
+  --destructive-foreground: #0a0a0b;
+
+  --bubble-user: #6366f1;
+  --bubble-user-fg: #ffffff;
+  --bubble-bot: #161618;
+  --bubble-bot-fg: #ededed;
+  --bubble-bot-border: #27272a;
+
+  --gradient-bg-from: #0a0a0b;
+  --gradient-bg-via: #0e0e10;
+  --gradient-bg-to: #0a0a12;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+
+  --color-bubble-user: var(--bubble-user);
+  --color-bubble-user-fg: var(--bubble-user-fg);
+  --color-bubble-bot: var(--bubble-bot);
+  --color-bubble-bot-fg: var(--bubble-bot-fg);
+  --color-bubble-bot-border: var(--bubble-bot-border);
+
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 /* 自定义滚动条 — 更轻更顺 */
@@ -34,11 +106,11 @@ body {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #d1d5db;
+  background: var(--border);
   border-radius: 999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #9ca3af;
+  background: var(--muted-foreground);
 }
 
 /* 全局平滑滚动 */
@@ -49,4 +121,85 @@ html {
 /* 代码块更圆 */
 pre {
   border-radius: 0.75rem !important;
+}
+
+/* 暗色模式：代码块背景跟随主题 */
+.hljs {
+  background: transparent !important;
+  color: var(--foreground);
+}
+
+/* 浅色 hljs token 颜色（参考 github.css） */
+:root {
+  --hljs-comment: #6a737d;
+  --hljs-keyword: #d73a49;
+  --hljs-string: #032f62;
+  --hljs-number: #005cc5;
+  --hljs-title: #6f42c1;
+  --hljs-attr: #005cc5;
+  --hljs-built-in: #005cc5;
+  --hljs-tag: #22863a;
+  --hljs-meta: #6a737d;
+}
+
+/* 暗色 hljs token 颜色（参考 github-dark.css） */
+.dark {
+  --hljs-comment: #8b949e;
+  --hljs-keyword: #ff7b72;
+  --hljs-string: #a5d6ff;
+  --hljs-number: #79c0ff;
+  --hljs-title: #d2a8ff;
+  --hljs-attr: #79c0ff;
+  --hljs-built-in: #79c0ff;
+  --hljs-tag: #7ee787;
+  --hljs-meta: #8b949e;
+}
+
+.hljs-comment,
+.hljs-quote {
+  color: var(--hljs-comment);
+  font-style: italic;
+}
+.hljs-keyword,
+.hljs-selector-tag,
+.hljs-literal,
+.hljs-type,
+.hljs-name {
+  color: var(--hljs-keyword);
+}
+.hljs-string,
+.hljs-doctag,
+.hljs-regexp {
+  color: var(--hljs-string);
+}
+.hljs-number,
+.hljs-symbol,
+.hljs-bullet,
+.hljs-link,
+.hljs-deletion {
+  color: var(--hljs-number);
+}
+.hljs-title,
+.hljs-section,
+.hljs-title.function_ {
+  color: var(--hljs-title);
+  font-weight: 600;
+}
+.hljs-attribute,
+.hljs-variable,
+.hljs-template-variable {
+  color: var(--hljs-attr);
+}
+.hljs-built_in,
+.hljs-class .hljs-title,
+.hljs-title.class_ {
+  color: var(--hljs-built-in);
+}
+.hljs-tag,
+.hljs-selector-id,
+.hljs-selector-class {
+  color: var(--hljs-tag);
+}
+.hljs-meta {
+  color: var(--hljs-meta);
 }

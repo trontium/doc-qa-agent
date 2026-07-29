@@ -113,7 +113,7 @@ export function SidebarContent({ onAction }: { onAction?: () => void }) {
 
   return (
     <div className="flex flex-col gap-4 overflow-y-auto p-4 h-full">
-      <div className="relative rounded-xl bg-gradient-to-br from-blue-500 via-violet-500 to-purple-600 p-4 text-white shadow-lg shadow-violet-200/50">
+      <div className="relative rounded-xl bg-gradient-to-br from-blue-500 via-violet-500 to-purple-600 p-4 text-white shadow-lg shadow-violet-200/50 dark:shadow-violet-900/30">
         <div className="flex items-center gap-2">
           <span className="text-2xl">📚</span>
           <div>
@@ -133,7 +133,7 @@ export function SidebarContent({ onAction }: { onAction?: () => void }) {
         />
         <Button
           variant="outline"
-          className="w-full rounded-xl border-dashed border-gray-300 hover:border-blue-400 hover:bg-blue-50/50 transition-all"
+          className="w-full rounded-xl border-dashed border-border hover:border-blue-400 hover:bg-blue-50/50 dark:hover:bg-blue-950/30 transition-all"
           onClick={() => fileRef.current?.click()}
           disabled={uploading}
         >
@@ -149,35 +149,35 @@ export function SidebarContent({ onAction }: { onAction?: () => void }) {
             </>
           )}
         </Button>
-        <p className="text-xs text-gray-500 mt-2">支持 PDF / Word / Markdown / TXT · 单文件 ≤ 5MB</p>
+        <p className="text-xs text-muted-foreground mt-2">支持 PDF / Word / Markdown / TXT · 单文件 ≤ 5MB</p>
       </div>
 
       <div className="flex-1 min-h-0">
-        <div className="text-xs font-semibold text-gray-500 mb-2">
+        <div className="text-xs font-semibold text-muted-foreground mb-2">
           已入库 {docs.length} 个文档
         </div>
         <div className="space-y-2">
           {loading && Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="h-14 w-full bg-gray-100 rounded animate-pulse" />
+            <div key={i} className="h-14 w-full bg-muted rounded animate-pulse" />
           ))}
           {!loading && docs.length === 0 && (
             <div className="text-center py-8 space-y-2">
               <div className="text-3xl">📄</div>
-              <p className="text-xs text-gray-400">还没有上传文档</p>
-              <p className="text-[10px] text-gray-300">点击上方按钮添加</p>
+              <p className="text-xs text-muted-foreground">还没有上传文档</p>
+              <p className="text-[10px] text-muted-foreground/60">点击上方按钮添加</p>
             </div>
           )}
           {docs.map((d) => (
             <div
               key={d.source}
-              className="text-xs border border-gray-200/80 rounded-xl p-2.5 flex items-start gap-2 hover:bg-blue-50/30 hover:border-blue-200/60 group transition-all duration-150"
+              className="text-xs border border-border rounded-xl p-2.5 flex items-start gap-2 hover:bg-blue-50/30 dark:hover:bg-blue-950/20 hover:border-blue-200/60 dark:hover:border-blue-800/60 group transition-all duration-150"
             >
               <FileText className={`w-4 h-4 shrink-0 mt-0.5 ${d.source === '__null_source__' ? 'text-red-400' : 'text-blue-500'}`} />
               <div className="flex-1 min-w-0">
                 <div className="truncate font-medium" title={d.source}>
                   {d.displaySource ?? d.source}
                 </div>
-                <div className="text-gray-500 mt-0.5">
+                <div className="text-muted-foreground mt-0.5">
                   {d.chunks} 段
                   {d.source === '__null_source__' && (
                     <span className="ml-1 text-red-500">· 建议删除</span>
@@ -206,14 +206,14 @@ export function SidebarContent({ onAction }: { onAction?: () => void }) {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="flex items-center gap-2 px-1">
-            <KeyRound className="w-4 h-4 text-gray-500 shrink-0" />
+            <KeyRound className="w-4 h-4 text-muted-foreground shrink-0" />
             <input
               type="password"
               placeholder="输入管理密码"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter') confirmDelete(); }}
-              className="flex-1 text-sm border rounded-md px-3 py-1.5 bg-white focus:outline-none focus:ring-1 focus:ring-red-400"
+              className="flex-1 text-sm border rounded-md px-3 py-1.5 bg-card text-foreground focus:outline-none focus:ring-1 focus:ring-red-400"
               autoFocus
             />
           </div>

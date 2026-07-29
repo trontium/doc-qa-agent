@@ -1,5 +1,5 @@
 'use client';
-import { useState, type ReactNode } from 'react';
+import { useState } from 'react';
 import type { ToolCall } from '@/types/message';
 
 function toolLabel(name: string): string {
@@ -28,8 +28,8 @@ function JsonBlock({ data, label }: { data: string; label: string }) {
   }
   return (
     <div className="mt-1">
-      <div className="text-[10px] text-gray-400 font-medium uppercase tracking-wide">{label}</div>
-      <pre className="text-[11px] text-gray-600 bg-gray-50 rounded p-1.5 mt-0.5 whitespace-pre-wrap break-all max-h-32 overflow-y-auto">
+      <div className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide">{label}</div>
+      <pre className="text-[11px] text-muted-foreground bg-muted rounded p-1.5 mt-0.5 whitespace-pre-wrap break-all max-h-32 overflow-y-auto">
         {display}
       </pre>
     </div>
@@ -39,7 +39,6 @@ function JsonBlock({ data, label }: { data: string; label: string }) {
 function ToolCallDetailComp({ toolCall }: { toolCall: ToolCall }) {
   const [expanded, setExpanded] = useState(false);
   const isRunning = toolCall.status === 'running';
-  const isDone = toolCall.status === 'done';
   const hasDetails = toolCall.input || toolCall.output;
 
   return (
@@ -49,14 +48,14 @@ function ToolCallDetailComp({ toolCall }: { toolCall: ToolCall }) {
         onClick={() => hasDetails ? setExpanded(!expanded) : undefined}
         className={`inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full border transition-colors ${
           isRunning
-            ? 'bg-yellow-50 border-yellow-300 text-yellow-800'
-            : 'bg-green-50 border-green-300 text-green-800'
+            ? 'bg-yellow-50 dark:bg-yellow-950/40 border-yellow-300 dark:border-yellow-700 text-yellow-800 dark:text-yellow-300'
+            : 'bg-green-50 dark:bg-green-950/40 border-green-300 dark:border-green-700 text-green-800 dark:text-green-300'
         } ${hasDetails ? 'cursor-pointer hover:bg-opacity-80' : 'cursor-default'}`}
       >
         {isRunning ? (
           <span className="w-1.5 h-1.5 rounded-full bg-yellow-500 animate-pulse" />
         ) : (
-          <span className="text-green-600">✓</span>
+          <span className="text-green-600 dark:text-green-400">✓</span>
         )}
         {toolLabel(toolCall.name)}
         {toolCall.duration != null && (
@@ -67,7 +66,7 @@ function ToolCallDetailComp({ toolCall }: { toolCall: ToolCall }) {
         )}
       </button>
       {expanded && hasDetails && (
-        <div className="mt-1 ml-2 border-l-2 border-gray-200 pl-2 max-w-xs">
+        <div className="mt-1 ml-2 border-l-2 border-border pl-2 max-w-xs">
           {toolCall.input && (
             <JsonBlock data={toolCall.input} label="输入" />
           )}
