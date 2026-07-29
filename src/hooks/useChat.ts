@@ -1,6 +1,7 @@
 'use client';
 import { useCallback, useRef, useState } from 'react';
 import { useChatStore } from '@/store/chatStore';
+import { usePerfStore } from '@/store/perfStore';
 import type { Message, Citation, ToolCall } from '@/types/message';
 
 /**
@@ -27,6 +28,8 @@ export function useChat() {
       store.getState().updateLast({
         content: (store.getState().messages.at(-1)?.content ?? '') + inc,
       });
+      // 前端渲染层观测：记录一次实际的 rAF flush（真正 patch 到 DOM）
+      usePerfStore.getState().addFlush();
     }
     rafRef.current = null;
   }, [store]);
@@ -63,6 +66,9 @@ export function useChat() {
       store.getState().addMessage(userMsg);
       store.getState().addMessage(asstMsg);
       setStatus('streaming');
+
+      // 前端渲染层观测：开始一次 stream 生命周期
+      usePerfStore.getState().streamStart();
 
       const ctrl = new AbortController();
       ctrlRef.current = ctrl;
@@ -126,6 +132,10 @@ export function useChat() {
               } else if (evt.type === 'citations') {
                 store.getState().updateLast({ citations: evt.citations });
               } else if (evt.type === 'content') {
+                // 前端渲染层观测：首字延迟 + chunk 计数
+                const perf = usePerfStore.getState();
+                perf.markFirstByte();
+                perf.addChunk(evt.chunk.length);
                 pushChunk(evt.chunk);
               } else if (evt.type === 'tool_call') {
                 const cur = store.getState().messages.at(-1);
@@ -213,6 +223,8 @@ export function useChat() {
       } finally {
         setStatus('idle');
         ctrlRef.current = null;
+        // 前端渲染层观测：结束 stream 生命周期，产出本次统计
+        usePerfStore.getState().streamEnd();
       }
     },
     [store, pushChunk, flush]

@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { DocumentSidebar, MobileSidebarButton, MobileSidebar } from '@/components/DocumentSidebar';
 import { ChatMessage } from '@/components/ChatMessage';
+import { PerfPanel } from '@/components/PerfPanel';
 import { Square, Send, Sparkles, Search, FileSearch, Zap, BookOpen, MessageSquare } from 'lucide-react';
 
 const SUGGESTIONS = [
@@ -201,6 +202,9 @@ export default function Home() {
           <span>每日体验 5 次</span>
         </div>
       </main>
+
+      {/* 前端渲染层可观测面板（右下角悬浮） */}
+      <PerfPanel />
     </div>
   );
 }
