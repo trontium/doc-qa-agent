@@ -44,6 +44,8 @@ function ChatMessageComp({ message }: { message: Message }) {
 
   const citationRefs = useRef<Map<number, HTMLDivElement | null>>(new Map());
   const [highlightIndex, setHighlightIndex] = useState<number | null>(null);
+  const [expandedCitation, setExpandedCitation] = useState<number | null>(null);
+  const [showRetrievalTrace, setShowRetrievalTrace] = useState(false);
 
   const handleCite = useCallback((index: number) => {
     const el = citationRefs.current.get(index);
@@ -173,14 +175,49 @@ function ChatMessageComp({ message }: { message: Message }) {
           <div className="mt-2 text-xs text-red-600 dark:text-red-400">⚠ 出错，请重试</div>
         )}
 
-        {/* 引用卡片列表（点击 [n] 会滚动到对应卡片并高亮 1.5s） */}
+        {/* 引用卡片 + 检索链路：RAG 可解释性 UI */}
         {!isUser && message.citations && message.citations.length > 0 && (
-          <div className="mt-3 pt-3 border-t border-border space-y-1.5">
-            <div className="text-xs text-muted-foreground font-semibold">
-              📎 引用（{message.citations.length}）· 点击 [n] 定位
+          <div className="mt-3 pt-3 border-t border-border space-y-2">
+            <div className="flex items-center justify-between gap-2">
+              <div className="text-xs text-muted-foreground font-semibold">
+                📎 引用（{message.citations.length}）· 点击 [n] 定位
+              </div>
+              {message.retrievalMeta && (
+                <button
+                  type="button"
+                  onClick={() => setShowRetrievalTrace((shown) => !shown)}
+                  className="shrink-0 text-[10px] text-violet-600 dark:text-violet-400 hover:underline"
+                  aria-expanded={showRetrievalTrace}
+                >
+                  {showRetrievalTrace ? '收起检索链路 ▲' : '查看检索链路 ▼'}
+                </button>
+              )}
             </div>
+
+            {/* 默认折叠，不干扰阅读；按需展开 Query Rewrite + Rerank 决策 */}
+            {showRetrievalTrace && message.retrievalMeta && (
+              <div className="rounded-lg border border-violet-100 dark:border-violet-900/60 bg-violet-50/60 dark:bg-violet-950/20 p-2.5 space-y-2 text-[11px]">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="font-semibold text-violet-800 dark:text-violet-300">检索决策链路</span>
+                  <span className={`rounded-full px-1.5 py-0.5 text-[10px] ${
+                    message.retrievalMeta.rerankApplied
+                      ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300'
+                      : 'bg-amber-100 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300'
+                  }`}>
+                    {message.retrievalMeta.rerankApplied ? 'Cross-Encoder 精排已生效' : 'Rerank 降级为 RRF'}
+                  </span>
+                </div>
+                <TraceRow label="原始问题" value={message.retrievalMeta.originalQuery} />
+                <TraceRow label="检索 Query" value={message.retrievalMeta.rewrittenQuery} accent />
+                <div className="text-[10px] text-muted-foreground pt-0.5">
+                  Query Rewrite → Hybrid Search（向量 + BM25）→ RRF → {message.retrievalMeta.rerankApplied ? 'Cross-Encoder Rerank' : 'RRF 结果直出'}
+                </div>
+              </div>
+            )}
+
             {message.citations.map((c) => {
               const isHighlighted = highlightIndex === c.index;
+              const isExpanded = expandedCitation === c.index;
               return (
                 <div
                   key={c.index}
@@ -193,12 +230,35 @@ function ChatMessageComp({ message }: { message: Message }) {
                       : 'bg-muted/50 border-blue-400'
                   }`}
                 >
-                  <div className="font-medium text-foreground mb-0.5">
-                    [{c.index}] {c.source ?? '未知来源'}
+                  <div className="flex items-start justify-between gap-2 mb-0.5">
+                    <div className="font-medium text-foreground min-w-0 truncate">
+                      [{c.index}] {c.source ?? '未知来源'}
+                    </div>
+                    <div className="flex shrink-0 items-center gap-1">
+                      {c.chunkIndex != null && (
+                        <span className="rounded bg-muted px-1 py-0.5 text-[10px] text-muted-foreground">片段 {c.chunkIndex + 1}</span>
+                      )}
+                      {/* 仅展示真实 Cross-Encoder 分，不拿向量分数冒充 */}
+                      {typeof c.rerankScore === 'number' && (
+                        <span className="rounded bg-emerald-100 dark:bg-emerald-950/60 px-1 py-0.5 text-[10px] font-medium text-emerald-700 dark:text-emerald-300">
+                          精排 {c.rerankScore.toFixed(3)}
+                        </span>
+                      )}
+                    </div>
                   </div>
-                  <div className={`text-muted-foreground ${isHighlighted ? '' : 'line-clamp-3'}`}>
+                  <div className={`text-muted-foreground whitespace-pre-wrap ${isExpanded ? '' : 'line-clamp-3'}`}>
                     {c.content}
                   </div>
+                  {c.content.length > 120 && (
+                    <button
+                      type="button"
+                      onClick={() => setExpandedCitation(isExpanded ? null : c.index)}
+                      className="mt-1 text-[10px] text-blue-600 dark:text-blue-400 hover:underline"
+                      aria-expanded={isExpanded}
+                    >
+                      {isExpanded ? '收起片段 ▲' : '展开完整片段 ▼'}
+                    </button>
+                  )}
                 </div>
               );
             })}
@@ -209,12 +269,32 @@ function ChatMessageComp({ message }: { message: Message }) {
   );
 }
 
-// React.memo：只在 status/content/citations/toolCalls 变化时重渲
+function TraceRow({
+  label,
+  value,
+  accent = false,
+}: {
+  label: string;
+  value: string;
+  accent?: boolean;
+}) {
+  return (
+    <div className="grid grid-cols-[4.5rem_1fr] gap-1.5">
+      <span className="text-muted-foreground">{label}</span>
+      <span className={`break-words ${accent ? 'font-medium text-violet-800 dark:text-violet-200' : 'text-foreground'}`}>
+        {value}
+      </span>
+    </div>
+  );
+}
+
+// React.memo：只在实际展示相关字段变化时重渲
 export const ChatMessage = memo(ChatMessageComp, (prev, next) => {
   return (
     prev.message.content === next.message.content &&
     prev.message.status === next.message.status &&
     prev.message.citations === next.message.citations &&
+    prev.message.retrievalMeta === next.message.retrievalMeta &&
     prev.message.toolCalls === next.message.toolCalls
   );
 });

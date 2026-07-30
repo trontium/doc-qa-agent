@@ -2,7 +2,7 @@
 import { useCallback, useRef, useState } from 'react';
 import { useChatStore } from '@/store/chatStore';
 import { usePerfStore } from '@/store/perfStore';
-import type { Message, Citation, ToolCall } from '@/types/message';
+import type { Message, Citation, RetrievalMeta, ToolCall } from '@/types/message';
 
 /**
  * useChat · Day 3 版本
@@ -123,6 +123,7 @@ export function useChat() {
               const evt = JSON.parse(data) as
                 | { type: 'stage'; stage: 'retrieving' | 'generating' }
                 | { type: 'citations'; citations: Citation[] }
+                | ({ type: 'retrieval_meta' } & RetrievalMeta)
                 | { type: 'content'; chunk: string }
                 | { type: 'tool_call'; name: string; status: 'running' | 'done'; input?: string; output?: string; duration?: number; startedAt?: number }
                 | { type: 'error'; error: string };
@@ -131,6 +132,14 @@ export function useChat() {
                 store.getState().updateLast({ stage: evt.stage });
               } else if (evt.type === 'citations') {
                 store.getState().updateLast({ citations: evt.citations });
+              } else if (evt.type === 'retrieval_meta') {
+                store.getState().updateLast({
+                  retrievalMeta: {
+                    originalQuery: evt.originalQuery,
+                    rewrittenQuery: evt.rewrittenQuery,
+                    rerankApplied: evt.rerankApplied,
+                  },
+                });
               } else if (evt.type === 'content') {
                 // 前端渲染层观测：首字延迟 + chunk 计数
                 const perf = usePerfStore.getState();

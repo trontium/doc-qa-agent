@@ -157,10 +157,17 @@ async function handlePipeline(
     duration: retrieveDuration,
   });
 
-  // 发送 citations
+  // 发送引用 + 可解释性元数据。
+  // 二者分事件发送，前端即使某类 UI 降级，回答主链路仍不受影响。
   if (result.citations.length > 0) {
     send(ctrl, { type: 'citations', citations: result.citations });
   }
+  send(ctrl, {
+    type: 'retrieval_meta',
+    originalQuery: userQuery,
+    rewrittenQuery: result.rewrittenQuery,
+    rerankApplied: result.rerankApplied,
+  });
 
   // ---- Stage 2: Generation ----
   send(ctrl, { type: 'stage', stage: 'generating' });

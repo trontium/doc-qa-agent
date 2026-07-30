@@ -74,7 +74,8 @@ export async function rerank(
   // results 按 relevance_score 降序，index 对应 candidates 的下标
   return data.results.map((r) => ({
     ...candidates[r.index],
-    // 用交叉编码器的相关性分数替换 RRF 分数
-    similarity: r.relevance_score,
+    // 保留原 similarity，单独记录 Cross-Encoder 分数。
+    // 否则前端无法判断该值是向量分数还是精排分数，会造成可解释性误导。
+    rerankScore: r.relevance_score,
   }));
 }

@@ -29,6 +29,8 @@ export interface RetrievalResult {
   context: string;
   /** 检索质量信号：是否有有效召回（false 时 Stage 2 应主动走 web_search） */
   hasValidContext: boolean;
+  /** 本次结果中是否有真实 Cross-Encoder 精排得分（无 API key/失败降级时为 false） */
+  rerankApplied: boolean;
 }
 
 const REWRITE_PROMPT = `你是一个查询优化助手。用户的原始查询可能口语化、模糊或包含歧义。
@@ -94,6 +96,12 @@ function buildCitations(chunks: RetrievedChunk[]): Citation[] {
     index: i + 1,
     content: chunk.content,
     source: chunk.metadata?.source ?? '未知',
+    // rerankScore 只在 Cross-Encoder 成功时存在；不回退为向量分数，避免误导用户
+    rerankScore: chunk.rerankScore,
+    chunkIndex:
+      typeof chunk.metadata?.chunk_index === 'number'
+        ? chunk.metadata.chunk_index
+        : undefined,
   }));
 }
 
@@ -129,6 +137,8 @@ export async function retrieve(query: string, topK = 5): Promise<RetrievalResult
   // Step 3: 过滤掉 PDF 解析失败产物（unicode 转义字符）
   const chunks = filterGarbage(rawChunks).slice(0, topK);
   const hasValidContext = chunks.length > 0;
+  // 仅有 Cross-Encoder 成功返回的 rerankScore 才算精排已生效
+  const rerankApplied = chunks.some((chunk) => typeof chunk.rerankScore === 'number');
 
   return {
     rewrittenQuery,
@@ -136,5 +146,6 @@ export async function retrieve(query: string, topK = 5): Promise<RetrievalResult
     citations: buildCitations(chunks),
     context: buildContext(chunks),
     hasValidContext,
+    rerankApplied,
   };
 }

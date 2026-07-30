@@ -25,6 +25,8 @@ export interface RetrievedChunk {
     [key: string]: unknown;
   };
   similarity?: number;
+  /** Cross-Encoder 精排得分；与向量 similarity 分离，避免 UI 错误标注 */
+  rerankScore?: number;
   rank?: number;
 }
 
