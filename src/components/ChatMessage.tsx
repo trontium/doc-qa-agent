@@ -44,8 +44,6 @@ function ChatMessageComp({ message }: { message: Message }) {
 
   const citationRefs = useRef<Map<number, HTMLDivElement | null>>(new Map());
   const [highlightIndex, setHighlightIndex] = useState<number | null>(null);
-  const [expandedCitation, setExpandedCitation] = useState<number | null>(null);
-  const [showRetrievalTrace, setShowRetrievalTrace] = useState(false);
 
   const handleCite = useCallback((index: number) => {
     const el = citationRefs.current.get(index);
@@ -178,46 +176,39 @@ function ChatMessageComp({ message }: { message: Message }) {
         {/* 引用卡片 + 检索链路：RAG 可解释性 UI */}
         {!isUser && message.citations && message.citations.length > 0 && (
           <div className="mt-3 pt-3 border-t border-border space-y-2">
-            <div className="flex items-center justify-between gap-2">
-              <div className="text-xs text-muted-foreground font-semibold">
-                📎 引用（{message.citations.length}）· 点击 [n] 定位
-              </div>
-              {message.retrievalMeta && (
-                <button
-                  type="button"
-                  onClick={() => setShowRetrievalTrace((shown) => !shown)}
-                  className="shrink-0 text-[10px] text-violet-600 dark:text-violet-400 hover:underline"
-                  aria-expanded={showRetrievalTrace}
-                >
-                  {showRetrievalTrace ? '收起检索链路 ▲' : '查看检索链路 ▼'}
-                </button>
-              )}
+            <div className="text-xs text-muted-foreground font-semibold">
+              📎 引用（{message.citations.length}）· 点击 [n] 定位
             </div>
 
-            {/* 默认折叠，不干扰阅读；按需展开 Query Rewrite + Rerank 决策 */}
-            {showRetrievalTrace && message.retrievalMeta && (
-              <div className="rounded-lg border border-violet-100 dark:border-violet-900/60 bg-violet-50/60 dark:bg-violet-950/20 p-2.5 space-y-2 text-[11px]">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="font-semibold text-violet-800 dark:text-violet-300">检索决策链路</span>
-                  <span className={`rounded-full px-1.5 py-0.5 text-[10px] ${
-                    message.retrievalMeta.rerankApplied
-                      ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300'
-                      : 'bg-amber-100 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300'
-                  }`}>
-                    {message.retrievalMeta.rerankApplied ? 'Cross-Encoder 精排已生效' : 'Rerank 降级为 RRF'}
-                  </span>
+            {/* 原生 details：零 JS 状态、键盘可访问；默认折叠，不干扰阅读 */}
+            {message.retrievalMeta && (
+              <details className="group rounded-lg border border-violet-100 dark:border-violet-900/60 bg-violet-50/60 dark:bg-violet-950/20 p-2.5 text-[11px]">
+                <summary className="cursor-pointer list-none text-violet-700 dark:text-violet-300 hover:underline">
+                  <span className="group-open:hidden">查看检索链路 ▼</span>
+                  <span className="hidden group-open:inline">收起检索链路 ▲</span>
+                </summary>
+                <div className="mt-2 space-y-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-semibold text-violet-800 dark:text-violet-300">检索决策链路</span>
+                    <span className={`rounded-full px-1.5 py-0.5 text-[10px] ${
+                      message.retrievalMeta.rerankApplied
+                        ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300'
+                        : 'bg-amber-100 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300'
+                    }`}>
+                      {message.retrievalMeta.rerankApplied ? 'Cross-Encoder 精排已生效' : 'Rerank 降级为 RRF'}
+                    </span>
+                  </div>
+                  <TraceRow label="原始问题" value={message.retrievalMeta.originalQuery} />
+                  <TraceRow label="检索 Query" value={message.retrievalMeta.rewrittenQuery} accent />
+                  <div className="text-[10px] text-muted-foreground pt-0.5">
+                    Query Rewrite → Hybrid Search（向量 + BM25）→ RRF → {message.retrievalMeta.rerankApplied ? 'Cross-Encoder Rerank' : 'RRF 结果直出'}
+                  </div>
                 </div>
-                <TraceRow label="原始问题" value={message.retrievalMeta.originalQuery} />
-                <TraceRow label="检索 Query" value={message.retrievalMeta.rewrittenQuery} accent />
-                <div className="text-[10px] text-muted-foreground pt-0.5">
-                  Query Rewrite → Hybrid Search（向量 + BM25）→ RRF → {message.retrievalMeta.rerankApplied ? 'Cross-Encoder Rerank' : 'RRF 结果直出'}
-                </div>
-              </div>
+              </details>
             )}
 
             {message.citations.map((c) => {
               const isHighlighted = highlightIndex === c.index;
-              const isExpanded = expandedCitation === c.index;
               return (
                 <div
                   key={c.index}
@@ -246,18 +237,18 @@ function ChatMessageComp({ message }: { message: Message }) {
                       )}
                     </div>
                   </div>
-                  <div className={`text-muted-foreground whitespace-pre-wrap ${isExpanded ? '' : 'line-clamp-3'}`}>
-                    {c.content}
-                  </div>
-                  {c.content.length > 120 && (
-                    <button
-                      type="button"
-                      onClick={() => setExpandedCitation(isExpanded ? null : c.index)}
-                      className="mt-1 text-[10px] text-blue-600 dark:text-blue-400 hover:underline"
-                      aria-expanded={isExpanded}
-                    >
-                      {isExpanded ? '收起片段 ▲' : '展开完整片段 ▼'}
-                    </button>
+                  {c.content.length > 120 ? (
+                    <details className="group">
+                      <summary className="cursor-pointer list-none text-muted-foreground">
+                        {/* max-height 兜底：不依赖 line-clamp 插件，确保默认只展示约 3 行 */}
+                        <span className="block whitespace-pre-wrap leading-4 max-h-12 overflow-hidden group-open:hidden">{c.content}</span>
+                        <span className="hidden whitespace-pre-wrap group-open:block">{c.content}</span>
+                        <span className="mt-1 block text-[10px] text-blue-600 dark:text-blue-400 group-open:hidden">展开完整片段 ▼</span>
+                        <span className="mt-1 hidden text-[10px] text-blue-600 dark:text-blue-400 group-open:block">收起片段 ▲</span>
+                      </summary>
+                    </details>
+                  ) : (
+                    <div className="text-muted-foreground whitespace-pre-wrap">{c.content}</div>
                   )}
                 </div>
               );
