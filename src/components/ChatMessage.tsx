@@ -149,10 +149,17 @@ function ChatMessageComp({ message }: { message: Message }) {
 
         {isUser ? (
           <div className="whitespace-pre-wrap break-words">{message.content}</div>
+        ) : isStreaming && !message.content ? (
+          // 流式开始但还没收到第一个 chunk：渲染骨架行（避免把"⏳ 思考中"喂给 Markdown 解析器）
+          <div className="space-y-2 py-1" role="status" aria-label="正在生成回答">
+            <div className="h-3 w-3/4 bg-muted rounded animate-pulse" />
+            <div className="h-3 w-full bg-muted rounded animate-pulse" />
+            <div className="h-3 w-5/6 bg-muted rounded animate-pulse" />
+          </div>
         ) : (
           <div className="prose prose-sm max-w-none break-words prose-p:my-2 prose-pre:my-2 prose-code:before:content-none prose-code:after:content-none dark:prose-invert">
             <StreamingMarkdown
-              content={message.content || (isStreaming ? '⏳ 思考中…' : '')}
+              content={message.content}
               isStreaming={isStreaming}
               components={markdownComponents}
             />

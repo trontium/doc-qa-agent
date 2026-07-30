@@ -8,6 +8,7 @@ import { DocumentSidebar, MobileSidebarButton, MobileSidebar } from '@/component
 import { ChatMessage } from '@/components/ChatMessage';
 import { PerfPanel } from '@/components/PerfPanel';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { Square, Send, Sparkles, Search, FileSearch, Zap, BookOpen, MessageSquare } from 'lucide-react';
 
 const SUGGESTIONS = [
@@ -156,7 +157,10 @@ export default function Home() {
             </div>
           )}
           {messages.map((m) => (
-            <ChatMessage key={m.id} message={m} />
+            // 单条消息渲染失败不影响其他消息
+            <ErrorBoundary key={m.id}>
+              <ChatMessage message={m} />
+            </ErrorBoundary>
           ))}
           <div ref={bottomRef} />
         </div>
@@ -208,7 +212,9 @@ export default function Home() {
       </main>
 
       {/* 前端渲染层可观测面板（右下角悬浮） */}
-      <PerfPanel />
+      <ErrorBoundary fallback={null}>
+        <PerfPanel />
+      </ErrorBoundary>
     </div>
   );
 }
